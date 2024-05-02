@@ -2,7 +2,6 @@ package memo
 
 import (
 	"context"
-	"github.com/todo-enjoers/valik/internal/model"
 )
 
 type Repo struct{}

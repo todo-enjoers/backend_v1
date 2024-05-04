@@ -42,7 +42,7 @@ func (s *Storage) GetAll(_ context.Context) (res []*model.Todo, err error) {
 	return res, nil
 }
 
-func (s *Storage) RegisterUser(_ context.Context, item model.UserDTO) (*model.UserDTO, error) {
+func (s *Storage) RegisterUser(_ context.Context, item model.UserCreateRequest) (*model.UserDTO, error) {
 	user := &model.UserDTO{
 		ID:       s.lastIndexU + 1,
 		Login:    item.Login,
@@ -51,4 +51,18 @@ func (s *Storage) RegisterUser(_ context.Context, item model.UserDTO) (*model.Us
 	s.lastIndexU += 1
 
 	return user, nil
+}
+
+func (s *Storage) LoginUser(_ context.Context, item model.TodoCreateRequest) error {
+	// logic with logger
+	return nil
+}
+
+func (s *Storage) GetMe(_ context.Context) (res []*model.UserDTO, err error) {
+	res = make([]*model.UserDTO, 0, s.lastIndexU)
+	s.data.Range(func(_, value any) bool {
+		res = append(res, value.(*model.UserDTO))
+		return true
+	})
+	return res, nil
 }

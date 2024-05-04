@@ -9,18 +9,46 @@ import (
 )
 
 func (ctrl *Controller) HandleRegisterUser(c echo.Context) error {
-	Login := c.FormValue("email")
-	Password := c.FormValue("password")
+	var req model.UserCreateRequest
+	if err := c.Bind(&req); err != nil {
+		return err
+	}
+	if ok, err := ValidateRequest(req); !ok {
+		return err
+	}
 
-	HashedPassword, err := bcrypt.GenerateFromPassword([]byte(Password), bcrypt.DefaultCost)
+	HashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return err
 	}
-	user := &model.UserDTO{
-		Login:    Login,
-		Password: string(HashedPassword),
+
+	req.Password = string(HashedPassword)
+
+	result, err := ctrl.storage.RegisterUser(c.Request().Context(), req)
+	if err != nil {
+		log.Printf("got unexpected error: %v\r\n", err)
+		return c.String(http.StatusNotFound, "not found")
 	}
-	return c.JSON(http.StatusOK)
+
+	return c.JSON(http.StatusOK, result)
+}
+
+func (ctrl *Controller) HandleLoginUser(c echo.Context) error {
+	// Handler: login
+	return nil
+}
+
+func (ctrl *Controller) HandleGetMe(c echo.Context) error {
+	result, err := ctrl.storage.GetMe(c.Request().Context())
+	if err != nil {
+		log.Printf("got unexpected error: %v\r\n", err)
+		return c.String(http.StatusBadRequest, "unexpected error")
+	}
+	return c.JSON(http.StatusOK, result)
+}
+
+func (ctrl *Controller) HandleChangePasswordUser(c echo.Context) error {
+	return nil
 }
 
 func (ctrl *Controller) HandleGetAll(c echo.Context) error {
@@ -30,4 +58,8 @@ func (ctrl *Controller) HandleGetAll(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "unexpected error")
 	}
 	return c.JSON(http.StatusOK, result)
+}
+
+func (ctrl *Controller) HandleRefreshToken(c echo.Context) error {
+	return nil
 }

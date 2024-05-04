@@ -27,12 +27,13 @@ func New(repo *storage.Storage, cfg *config.Config) *Controller {
 func (ctrl *Controller) configureRoutes() {
 	log.Println("configuring routes")
 	router := ctrl.echo
-	router.GET("/todos", ctrl.HandleGetTodos)
-	router.GET("/todos/{id}", ctrl.HandleGetTodoByID)
-	router.POST("/todos", ctrl.HandleCreateTodo)
-	router.PUT("/todos/{id}", ctrl.HandleUpdateTodo)
-	router.DELETE("/todos/{id}", ctrl.HandleDeleteTodo)
-
+	/*
+		router.GET("/todos", ctrl.HandleGetTodos)
+		router.GET("/todos/{id}", ctrl.HandleGetTodoByID)
+		router.POST("/todos", ctrl.HandleCreateTodo)
+		router.PUT("/todos/{id}", ctrl.HandleUpdateTodo)
+		router.DELETE("/todos/{id}", ctrl.HandleDeleteTodo)
+	*/
 	router.POST("/users/register", ctrl.HandleRegisterUser)
 	router.POST("/users/login", ctrl.HandleLoginUser)
 	router.GET("/users/me", ctrl.HandleGetMe)

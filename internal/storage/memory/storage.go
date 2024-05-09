@@ -1,10 +1,14 @@
-package storage
+package memory
 
 import (
 	"context"
-	"github.com/todo-enjoers/backend_v1/internal/storage/model"
+	"github.com/todo-enjoers/backend_v1/internal/model"
 	"sync"
 )
+
+/*
+var db *gorm.DB
+*/
 
 type Storage struct {
 	data       *sync.Map
@@ -49,7 +53,6 @@ func (s *Storage) RegisterUser(_ context.Context, item model.UserCreateRequest) 
 		Password: item.Password,
 	}
 	s.lastIndexU += 1
-
 	return user, nil
 }
 

@@ -2,7 +2,7 @@ package http
 
 import (
 	"errors"
-	"github.com/todo-enjoers/backend_v1/internal/storage/model"
+	"github.com/todo-enjoers/backend_v1/internal/model"
 	"strings"
 )
 

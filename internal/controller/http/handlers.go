@@ -2,7 +2,7 @@ package http
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/todo-enjoers/backend_v1/internal/storage/model"
+	"github.com/todo-enjoers/backend_v1/internal/model"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"

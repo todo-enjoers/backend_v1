@@ -3,17 +3,17 @@ package http
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/todo-enjoers/backend_v1/config"
-	"github.com/todo-enjoers/backend_v1/internal/storage"
+	"github.com/todo-enjoers/backend_v1/internal/storage/memory"
 	"log"
 )
 
 type Controller struct {
 	echo    *echo.Echo
-	storage *storage.Storage
+	storage *memory.Storage
 	cfg     *config.Config
 }
 
-func New(repo *storage.Storage, cfg *config.Config) *Controller {
+func New(repo *memory.Storage, cfg *config.Config) *Controller {
 	log.Println("init controller")
 	ctrl := &Controller{
 		echo:    echo.New(),

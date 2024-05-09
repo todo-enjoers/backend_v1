@@ -8,12 +8,14 @@ import (
 )
 
 type Config struct {
-	BindAddr string `config:"bind_addr, short = a"`
+	BindAddr    string `config:"bind_addr,short=a"`
+	DataBaseDNS string `config:"data_base_dns,short=d"`
 }
 
 func New() (cfg *Config, err error) {
 	cfg = &Config{
-		BindAddr: ":8080",
+		BindAddr:    ":8080",
+		DataBaseDNS: "postgres://postgres:postgres@localhost:5432/postgres",
 	}
 	loader := confita.NewLoader(
 		env.NewBackend(),

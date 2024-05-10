@@ -9,7 +9,7 @@ import (
 )
 
 func (ctrl *Controller) HandleRegisterUser(c echo.Context) error {
-	var req model.UserCreateRequest
+	var req model.UserDTO
 	if err := c.Bind(&req); err != nil {
 		return err
 	}
@@ -24,7 +24,7 @@ func (ctrl *Controller) HandleRegisterUser(c echo.Context) error {
 
 	req.Password = string(HashedPassword)
 
-	result, err := ctrl.storage.RegisterUser(c.Request().Context(), req)
+	err := ctrl.storage.InsertUser(c.Request().Context(), req)
 	if err != nil {
 		log.Printf("got unexpected error: %v\r\n", err)
 		return c.String(http.StatusNotFound, "not found")
@@ -38,6 +38,7 @@ func (ctrl *Controller) HandleLoginUser(c echo.Context) error {
 	return nil
 }
 
+/*
 func (ctrl *Controller) HandleGetMe(c echo.Context) error {
 	result, err := ctrl.storage.GetMe(c.Request().Context())
 	if err != nil {
@@ -46,19 +47,20 @@ func (ctrl *Controller) HandleGetMe(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, result)
 }
+*/
 
 func (ctrl *Controller) HandleChangePasswordUser(c echo.Context) error {
 	return nil
 }
 
-func (ctrl *Controller) HandleGetAll(c echo.Context) error {
-	result, err := ctrl.storage.GetAll(c.Request().Context())
-	if err != nil {
-		log.Printf("got unexpected error: %v\r\n", err)
-		return c.String(http.StatusBadRequest, "unexpected error")
-	}
-	return c.JSON(http.StatusOK, result)
-}
+//func (ctrl *Controller) HandleGetAll(c echo.Context) error {
+//	result, err := ctrl.storage.GetAll(c.Request().Context())
+//	if err != nil {
+//		log.Printf("got unexpected error: %v\r\n", err)
+//		return c.String(http.StatusBadRequest, "unexpected error")
+//	}
+//	return c.JSON(http.StatusOK, result)
+//}
 
 func (ctrl *Controller) HandleRefreshToken(c echo.Context) error {
 	return nil

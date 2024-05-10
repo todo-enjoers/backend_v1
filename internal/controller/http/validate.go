@@ -1,12 +1,14 @@
 package http
 
 import (
+	"context"
 	"errors"
 	"github.com/todo-enjoers/backend_v1/internal/model"
+	"github.com/todo-enjoers/backend_v1/internal/storage/postgres"
 	"strings"
 )
 
-func ValidateRequest(req model.UserCreateRequest) (ok bool, err error) {
+func ValidateRequest(req model.UserDTO) (ok bool, err error) {
 	err = nil
 	if !strings.Contains(req.Login, "@") && len(req.Login) > 7 {
 		err = errors.New("email address is required")
@@ -18,8 +20,7 @@ func ValidateRequest(req model.UserCreateRequest) (ok bool, err error) {
 		return false, err
 	}
 
-	// add with database logic when searching a user in db
-	if req.Login != "" {
+	if postgres.SearchUserByLogin(context.Context, req.Login) {
 		return false, errors.New("email address already in use by another user")
 	}
 

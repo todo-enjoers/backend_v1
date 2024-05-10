@@ -3,17 +3,17 @@ package http
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/todo-enjoers/backend_v1/config"
-	"github.com/todo-enjoers/backend_v1/internal/storage/memory"
+	"github.com/todo-enjoers/backend_v1/internal/storage"
 	"log"
 )
 
 type Controller struct {
 	echo    *echo.Echo
-	storage *memory.Storage
+	storage storage.Interface
 	cfg     *config.Config
 }
 
-func New(repo *memory.Storage, cfg *config.Config) *Controller {
+func New(repo storage.Interface, cfg *config.Config) *Controller {
 	log.Println("init controller")
 	ctrl := &Controller{
 		echo:    echo.New(),
@@ -36,7 +36,7 @@ func (ctrl *Controller) configureRoutes() {
 	*/
 	router.POST("/users/register", ctrl.HandleRegisterUser)
 	router.POST("/users/login", ctrl.HandleLoginUser)
-	router.GET("/users/me", ctrl.HandleGetMe)
+	//router.GET("/users/me", ctrl.HandleGetMe)
 	router.POST("/users/change-password", ctrl.HandleChangePasswordUser)
 	router.POST("/users/refresh-token", ctrl.HandleRefreshToken)
 }

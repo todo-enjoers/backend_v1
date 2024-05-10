@@ -6,7 +6,8 @@ import (
 )
 
 type Interface interface {
-	Store(_ context.Context, item model.TodoCreateRequest) (*model.Todo, error)
-	GetAll(_ context.Context) (res []*model.Todo, err error)
-	RegisterUser(_ context.Context, item model.UserCreateRequest) (*model.UserDTO, error)
+	InsertUser(ctx context.Context, item *model.UserDTO) error
+	GetUserByID(ctx context.Context, id int64) (user *model.UserDTO, err error)
+	UpdateUserPassword(ctx context.Context, password string, id int64) error
+	SearchUserByLogin(ctx context.Context, login string) error
 }

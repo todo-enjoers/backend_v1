@@ -47,17 +47,14 @@ func (ctrl *Controller) configureRoutes() {
 			users.POST("/change-password", ctrl.HandleChangePasswordUser)
 			users.POST("/refresh-token", ctrl.HandleRefreshToken)
 		}
-		/*
-			todos := api.Group("/todos")
-			{
-				todos.GET("/todos", ctrl.HandleGetTodos)
-				todos.GET("/todos/{id}", ctrl.HandleGetTodoByID)
-				todos.POST("/todos", ctrl.HandleCreateTodo)
-				todos.PUT("/todos/{id}", ctrl.HandleUpdateTodo)
-				todos.DELETE("/todos/{id}", ctrl.HandleDeleteTodo)
-			delete /todos
-			}
-		*/
+		todos := api.Group("/todos")
+		{
+			todos.GET("/", ctrl.HandleGetTodos)
+			todos.GET("/{id}", ctrl.HandleGetTodoByID)
+			todos.POST("/", ctrl.HandleCreateTodo)
+			todos.PUT("/{id}", ctrl.HandleUpdateTodo)
+			todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
+		}
 	}
 }
 
@@ -67,7 +64,7 @@ func (ctrl *Controller) configureMiddlewares(c echo.Context) error {
 }
 */
 
-func (ctrl *Controller) Run() error {
+func (ctrl *Controller) Run(ctx context.Context) error {
 	log.Printf("starting HTTP server on address: %s", ctrl.cfg.BindAddr)
 	return ctrl.server.Start(ctrl.cfg.BindAddr)
 }

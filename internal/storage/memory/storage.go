@@ -46,8 +46,8 @@ func (s *Storage) GetAll(_ context.Context) (res []*model.Todo, err error) {
 	return res, nil
 }
 
-func (s *Storage) RegisterUser(_ context.Context, item model.UserCreateRequest) (*model.UserDTO, error) {
-	user := &model.UserDTO{
+func (s *Storage) RegisterUser(_ context.Context, item model.UserCreateRequest) (model.UserDTO, error) {
+	user := model.UserDTO{
 		ID:       s.lastIndexU + 1,
 		Login:    item.Login,
 		Password: item.Password,

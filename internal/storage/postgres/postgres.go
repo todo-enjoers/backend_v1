@@ -23,9 +23,9 @@ const (
 	QueryUserByLogin        = `SELECT login, password FROM users WHERE login = $1;`
 	QueryMigrateUp          = `CREATE TABLE IF NOT EXISTS users
 (
-    id       bigserial primary key not null unique,
-    login    varchar unique        not null,
-    password varchar               not null
+    id UUID primary key not null unique,
+    login varchar unique not null,
+    encrypted_password varchar not null
 );`
 )
 

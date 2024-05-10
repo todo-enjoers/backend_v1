@@ -30,7 +30,7 @@ func (ctrl *Controller) HandleRegisterUser(c echo.Context) error {
 		return c.String(http.StatusNotFound, "not found")
 	}
 
-	return c.JSON(http.StatusOK, result)
+	return c.JSON(http.StatusOK, nil)
 }
 
 func (ctrl *Controller) HandleLoginUser(c echo.Context) error {

@@ -16,7 +16,7 @@ type Config struct {
 func New() (cfg *Config, err error) {
 	cfg = &Config{
 		BindAddr:    ":8080",
-		DataBaseDNS: "postgres://postgres:postgres@localhost:5432/postgres",
+		DataBaseDNS: "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable",
 		JWT: &JWT{
 			AccessTokenLifeTime:  20,
 			RefreshTokenLifeTime: 10000,

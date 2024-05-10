@@ -11,7 +11,7 @@ import (
 func (ctrl *Controller) HandleRegisterUser(c echo.Context) error {
 	var req model.UserDTO
 	if err := c.Bind(&req); err != nil {
-		return err
+		return c.JSON(http.StatusBadRequest, err) //change
 	}
 	if ok, err := ValidateRequest(req); !ok {
 		return err

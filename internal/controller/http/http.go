@@ -1,14 +1,18 @@
 package http
 
 import (
+	"context"
 	"github.com/labstack/echo/v4"
 	"github.com/todo-enjoers/backend_v1/config"
+	"github.com/todo-enjoers/backend_v1/internal/controller"
 	"github.com/todo-enjoers/backend_v1/internal/storage"
 	"log"
 )
 
+var _ controller.Controller = (*Controller)(nil)
+
 type Controller struct {
-	echo    *echo.Echo
+	server  *echo.Echo
 	storage storage.Interface
 	cfg     *config.Config
 }
@@ -16,7 +20,7 @@ type Controller struct {
 func New(repo storage.Interface, cfg *config.Config) *Controller {
 	log.Println("init controller")
 	ctrl := &Controller{
-		echo:    echo.New(),
+		server:  echo.New(),
 		storage: repo,
 		cfg:     cfg,
 	}
@@ -24,24 +28,50 @@ func New(repo storage.Interface, cfg *config.Config) *Controller {
 	return ctrl
 }
 
-func (ctrl *Controller) configureRoutes() {
-	log.Println("configuring routes")
-	router := ctrl.echo
-	/*
-		router.GET("/todos", ctrl.HandleGetTodos)
-		router.GET("/todos/{id}", ctrl.HandleGetTodoByID)
-		router.POST("/todos", ctrl.HandleCreateTodo)
-		router.PUT("/todos/{id}", ctrl.HandleUpdateTodo)
-		router.DELETE("/todos/{id}", ctrl.HandleDeleteTodo)
-	*/
-	router.POST("/users/register", ctrl.HandleRegisterUser)
-	router.POST("/users/login", ctrl.HandleLoginUser)
-	//router.GET("/users/me", ctrl.HandleGetMe)
-	router.POST("/users/change-password", ctrl.HandleChangePasswordUser)
-	router.POST("/users/refresh-token", ctrl.HandleRefreshToken)
+func (ctrl *Controller) configure() {
+	//ctrl.configureMiddlewares()
+	ctrl.configureRoutes()
+
 }
 
+func (ctrl *Controller) configureRoutes() {
+	log.Println("configuring routes")
+	router := ctrl.server
+	api := router.Group("/api")
+	{
+		users := api.Group("/users")
+		{
+			users.POST("/register", ctrl.HandleRegisterUser)
+			users.POST("/login", ctrl.HandleLoginUser)
+			//users.GET("/me", ctrl.HandleGetMe)
+			users.POST("/change-password", ctrl.HandleChangePasswordUser)
+			users.POST("/refresh-token", ctrl.HandleRefreshToken)
+		}
+		/*
+			todos := api.Group("/todos")
+			{
+				todos.GET("/todos", ctrl.HandleGetTodos)
+				todos.GET("/todos/{id}", ctrl.HandleGetTodoByID)
+				todos.POST("/todos", ctrl.HandleCreateTodo)
+				todos.PUT("/todos/{id}", ctrl.HandleUpdateTodo)
+				todos.DELETE("/todos/{id}", ctrl.HandleDeleteTodo)
+			delete /todos
+			}
+		*/
+	}
+}
+
+/*
+func (ctrl *Controller) configureMiddlewares(c echo.Context) error {
+
+}
+*/
+
 func (ctrl *Controller) Run() error {
-	log.Printf("starting http server on address: %s", ctrl.cfg.BindAddr)
-	return ctrl.echo.Start(ctrl.cfg.BindAddr)
+	log.Printf("starting HTTP server on address: %s", ctrl.cfg.BindAddr)
+	return ctrl.server.Start(ctrl.cfg.BindAddr)
+}
+
+func (ctrl *Controller) Shutdown(ctx context.Context) error {
+	return ctrl.server.Shutdown(ctx)
 }

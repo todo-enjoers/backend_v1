@@ -17,11 +17,11 @@ var (
 )
 
 const (
-	InsertIntoUsers    = `INSERT INTO users (login, password) VALUES ($1, $2) RETURNING id;`
-	GetUserByID        = `SELECT login, password FROM users WHERE id = $1;`
-	UpdateUserPassword = `UPDATE users SET password = $1 WHERE id = $2;`
-	GetUserByLogin     = `SELECT login, password FROM users WHERE login = $1;`
-	MigrateUp          = `CREATE TABLE IF NOT EXISTS users
+	QueryInsertIntoUsers    = `INSERT INTO users (login, password) VALUES ($1, $2) RETURNING id;`
+	QueryGetUserByID        = `SELECT login, password FROM users WHERE id = $1;`
+	QueryUpdateUserPassword = `UPDATE users SET password = $1 WHERE id = $2;`
+	QueryUserByLogin        = `SELECT login, password FROM users WHERE login = $1;`
+	QueryMigrateUp          = `CREATE TABLE IF NOT EXISTS users
 (
     id       bigserial primary key not null unique,
     login    varchar unique        not null,
@@ -37,7 +37,7 @@ func New(pool *pgxpool.Pool) (*Client, error) {
 }
 
 func (c *Client) InsertUser(ctx context.Context, item *model.UserDTO) error {
-	_, err := c.pool.Exec(ctx, InsertIntoUsers, item.Login, item.Password)
+	_, err := c.pool.Exec(ctx, QueryInsertIntoUsers, item.Login, item.Password)
 	if err != nil {
 		return fmt.Errorf("unable to insert row: %w", err)
 	}
@@ -47,7 +47,7 @@ func (c *Client) InsertUser(ctx context.Context, item *model.UserDTO) error {
 func (c *Client) GetUserByID(ctx context.Context, id int64) (user *model.UserDTO, err error) {
 	user = new(model.UserDTO)
 
-	rows, err := c.pool.Query(ctx, GetUserByID, id)
+	rows, err := c.pool.Query(ctx, QueryGetUserByID, id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to query user: %w", err)
 	}
@@ -56,7 +56,7 @@ func (c *Client) GetUserByID(ctx context.Context, id int64) (user *model.UserDTO
 }
 
 func (c *Client) SearchUsersByLogin(ctx context.Context, login string) error {
-	rows, err := c.pool.Query(ctx, GetUserByLogin, login)
+	rows, err := c.pool.Query(ctx, QueryUserByLogin, login)
 	if err != nil {
 		return fmt.Errorf("unable to query users: %w", err)
 	}
@@ -65,7 +65,7 @@ func (c *Client) SearchUsersByLogin(ctx context.Context, login string) error {
 }
 
 func (c *Client) UpdateUserPassword(ctx context.Context, password string, id int64) error {
-	_, err := c.pool.Exec(ctx, UpdateUserPassword, password, id)
+	_, err := c.pool.Exec(ctx, QueryUpdateUserPassword, password, id)
 	if err != nil {
 		return fmt.Errorf("unable to update user or user not expected: %w", err)
 	}
@@ -73,6 +73,6 @@ func (c *Client) UpdateUserPassword(ctx context.Context, password string, id int
 }
 
 func (c *Client) Migrate(ctx context.Context) error {
-	_, err := c.pool.Exec(ctx, MigrateUp)
+	_, err := c.pool.Exec(ctx, QueryMigrateUp)
 	return err
 }

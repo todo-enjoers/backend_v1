@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func ValidateRequest(req model.UserDTO) (ok bool, err error) {
+func ValidateRequest(req model.UserRegisterRequest) (ok bool, err error) {
 	err = nil
 	if !strings.Contains(req.Login, "@") && len(req.Login) > 7 {
 		err = errors.New("email address is required")

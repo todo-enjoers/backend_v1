@@ -5,9 +5,9 @@ import "github.com/google/uuid"
 type (
 	// UserDTO : User Data Transfer Object
 	UserDTO struct {
-		ID       int64  `json:"id"`
-		Login    string `json:"email"`
-		Password string `json:"password"`
+		ID       uuid.UUID `json:"id"`
+		Login    string    `json:"email"`
+		Password string    `json:"password"`
 	}
 	// TodoDTO : User Data Transfer Object
 	TodoDTO struct {

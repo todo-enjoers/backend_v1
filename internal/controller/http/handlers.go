@@ -1,19 +1,22 @@
 package http
 
 import (
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/todo-enjoers/backend_v1/internal/model"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
 )
 
 func (ctrl *Controller) HandleRegisterUser(c echo.Context) error {
-	var req model.UserDTO
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, err) //change
+	var request model.UserRegisterRequest
+	if err := c.Bind(&request); err != nil {
+		ctrl.log.Error("could not bind request", zap.Error(err))
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": err.Error()}) //change
 	}
-	if ok, err := ValidateRequest(req); !ok {
+	if ok, err := ValidateRequest(request); !ok {
 		return err
 	}
 
@@ -22,9 +25,14 @@ func (ctrl *Controller) HandleRegisterUser(c echo.Context) error {
 		return err
 	}
 
-	req.Password = string(HashedPassword)
+	user := &model.UserDTO{
+		ID:       uuid.New(),
+		Login:    request.Login,
+		Password: string(HashedPassword),
+	}
+	ctrl.log.Info("got user", zap.Any("user", user))
 
-	err := ctrl.storage.InsertUser(c.Request().Context(), req)
+	err := ctrl.store.InsertUser(c.Request().Context(), request)
 	if err != nil {
 		log.Printf("got unexpected error: %v\r\n", err)
 		return c.String(http.StatusNotFound, "not found")

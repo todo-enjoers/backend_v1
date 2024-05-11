@@ -38,7 +38,6 @@ func (ctrl *Controller) HandleLoginUser(c echo.Context) error {
 	return nil
 }
 
-/*
 func (ctrl *Controller) HandleGetMe(c echo.Context) error {
 	result, err := ctrl.storage.GetMe(c.Request().Context())
 	if err != nil {
@@ -47,21 +46,22 @@ func (ctrl *Controller) HandleGetMe(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, result)
 }
-*/
 
 func (ctrl *Controller) HandleChangePasswordUser(c echo.Context) error {
 	return nil
 }
 
-//func (ctrl *Controller) HandleGetAll(c echo.Context) error {
-//	result, err := ctrl.storage.GetAll(c.Request().Context())
-//	if err != nil {
-//		log.Printf("got unexpected error: %v\r\n", err)
-//		return c.String(http.StatusBadRequest, "unexpected error")
-//	}
-//	return c.JSON(http.StatusOK, result)
-//}
+func (ctrl *Controller) HandleGetAll(c echo.Context) error {
+	result, err := ctrl.storage.GetAll(c.Request().Context())
+	if err != nil {
+		log.Printf("got unexpected error: %v\r\n", err)
+		return c.String(http.StatusBadRequest, "unexpected error")
+	}
+	return c.JSON(http.StatusOK, result)
+}
 
 func (ctrl *Controller) HandleRefreshToken(c echo.Context) error {
 	return nil
 }
+
+func (ctrl *Controller) HandleGetTodos(c echo.Context) error {}

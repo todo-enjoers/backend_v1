@@ -2,40 +2,48 @@ package http
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/todo-enjoers/backend_v1/config"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/gommon/log"
+	"github.com/todo-enjoers/backend_v1/internal/config"
 	"github.com/todo-enjoers/backend_v1/internal/controller"
 	"github.com/todo-enjoers/backend_v1/internal/storage"
-	"log"
+	"go.uber.org/zap"
 )
 
+// Checking whether the interface "Controller" implements the structure "Controller"
 var _ controller.Controller = (*Controller)(nil)
 
 type Controller struct {
 	server  *echo.Echo
 	storage storage.Interface
 	cfg     *config.Config
+	log     *zap.Logger
 }
 
-func New(repo storage.Interface, cfg *config.Config) *Controller {
-	log.Println("init controller")
+func New(store storage.Interface, cfg *config.Config, log *zap.Logger) (*Controller, error) {
+	log.Info("init controller")
 	ctrl := &Controller{
 		server:  echo.New(),
-		storage: repo,
+		storage: store,
 		cfg:     cfg,
+		log:     log,
 	}
-	ctrl.configureRoutes()
-	return ctrl
+	if err := ctrl.configure(); err != nil {
+		return nil, err
+	}
+	return ctrl, nil
 }
 
-func (ctrl *Controller) configure() {
-	//ctrl.configureMiddlewares()
+func (ctrl *Controller) configure() error {
+	ctrl.configureMiddlewares()
 	ctrl.configureRoutes()
-
+	return nil
 }
 
 func (ctrl *Controller) configureRoutes() {
-	log.Println("configuring routes")
+	log.Info("configuring routes")
 	router := ctrl.server
 	api := router.Group("/api")
 	{
@@ -58,14 +66,22 @@ func (ctrl *Controller) configureRoutes() {
 	}
 }
 
-/*
 func (ctrl *Controller) configureMiddlewares(c echo.Context) error {
-
+	var middlewares = []echo.MiddlewareFunc{
+		middleware.Gzip(),
+		middleware.Recover(),
+		middleware.RequestIDWithConfig(middleware.RequestIDConfig{
+			Skipper:      middleware.DefaultSkipper,
+			Generator:    uuid.NewString,
+			TargetHeader: echo.HeaderXRequestID,
+		}),
+		middleware.Logger(),
+	}
+	ctrl.server.Use(middlewares...)
 }
-*/
 
-func (ctrl *Controller) Run(ctx context.Context) error {
-	log.Printf("starting HTTP server on address: %s", ctrl.cfg.BindAddr)
+func (ctrl *Controller) Run(_ context.Context, log *zap.Logger) error {
+	log.Info("starting HTTP server on address: %s", zap.String("url", ctrl.cfg.BindAddr))
 	return ctrl.server.Start(ctrl.cfg.BindAddr)
 }
 

@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/todo-enjoers/backend_v1/config"
+	"github.com/todo-enjoers/backend_v1/internal/config"
 	"github.com/todo-enjoers/backend_v1/internal/controller/http"
 	controller "github.com/todo-enjoers/backend_v1/internal/controller/http"
+	"github.com/todo-enjoers/backend_v1/internal/pkg/token/jwt"
 	"github.com/todo-enjoers/backend_v1/internal/storage"
-	"github.com/todo-enjoers/backend_v1/internal/storage/postgres"
-	"github.com/todo-enjoers/backend_v1/pkg/client"
+	"github.com/todo-enjoers/backend_v1/internal/storage/client"
+	"github.com/todo-enjoers/backend_v1/internal/storage/pgx"
 	"go.uber.org/zap"
 )
 
@@ -24,40 +25,51 @@ func main() {
 		store    storage.Interface
 	)
 
+	ctx = context.Background()
+
 	//init logger
-	log, err = zap.NewProduction()
-	if err != nil {
-		log.Fatal("Failed to initialize logger", zap.Error(err))
-	}
+	log, _ = zap.NewProduction() //no error because func recently don't  return a error
 
 	//init config
-	cfg, err = config.New()
+	cfg, err = config.New(ctx)
 	if err != nil {
-		log.Fatal("error initializing config", zap.Error(err))
+		log.Fatal("Failed to initialize config", zap.Error(err))
+	}
+	log.Info("Initialized config", zap.Any("config", cfg))
+
+	//init jwt provider
+	provider, err = jwt.NewProvider(cfg, log)
+	if err != nil {
+		log.Fatal("Failed to initialize jwt provider", zap.Error(err))
 	}
 
 	//init pool
-	pool, err = client.New(context.Background(), cfg)
+	pool, err = client.New(ctx, cfg)
 	if err != nil {
 		log.Fatal("Failed to initialize logger", zap.Error(err))
 	}
 
 	//init storage
-	store, err = postgres.New(pool.P())
+	store, err = pgx.New(pool, log)
 	if err != nil {
 		log.Fatal("Failed to create pgx storage", zap.Error(err))
 	}
 
 	//init server
-	server, err = http.New(log, cfg, provider, store)
+	server, err = http.New(store, cfg, log)
+	if err != nil {
+		log.Fatal("Failed to initialize server", zap.Error(err))
+	}
+
+	//close server without fx
 	defer func() {
 		log.Error(
 			"Shutting down server",
 			zap.Error(server.Shutdown(ctx)),
 		)
 	}()
-	err = server.Run(ctx)
+	err = server.Run(ctx, log)
 	if err != nil {
-		log.Fatal("Failed to initialize server", zap.Error(err))
+		log.Fatal("Failed to run server", zap.Error(err))
 	}
 }

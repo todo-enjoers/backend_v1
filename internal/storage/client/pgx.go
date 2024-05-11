@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/todo-enjoers/backend_v1/config"
+	"github.com/todo-enjoers/backend_v1/internal/config"
 )
 
 type Client struct {

@@ -27,7 +27,11 @@ func New(ctx context.Context) (*Config, error) {
 			BindPort:    8080,
 		},
 		Postgres: &PostgresConfig{
-			DataBaseDNS: "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable",
+			Host:     "localhost",
+			Port:     5432,
+			User:     "postgres",
+			Password: "postgres",
+			Database: "postgres",
 		},
 		JWT: &JWT{
 			AccessTokenLifeTime:  20,

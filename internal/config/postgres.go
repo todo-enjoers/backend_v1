@@ -2,10 +2,6 @@ package config
 
 import "fmt"
 
-//type PostgresConfig struct {
-//	DataBaseDNS string `config:"postgres-dns"`
-//}
-
 type PostgresConfig struct {
 	Host     string `config:"postgres-host"`
 	Port     int    `config:"postgres-port"`

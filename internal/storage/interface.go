@@ -2,12 +2,18 @@ package storage
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"github.com/todo-enjoers/backend_v1/internal/model"
 )
 
+type UserStorage interface {
+	Create(ctx context.Context, user *model.UserDTO) error
+	GetByID(ctx context.Context, id uuid.UUID) (*model.UserDTO, error)
+	GetByLogin(ctx context.Context, login string) (*model.UserDTO, error)
+	ChangePassword(ctx context.Context, password string, id uuid.UUID) error
+	GetAll(ctx context.Context) ([]model.UserDTO, error)
+}
+
 type Interface interface {
-	InsertUser(ctx context.Context, item model.UserDTO) error
-	GetUserByID(ctx context.Context, id int64) (user *model.UserDTO, err error)
-	UpdateUserPassword(ctx context.Context, password string, id int64) error
-	SearchUserByLogin(ctx context.Context, login string) error
+	User() UserStorage
 }

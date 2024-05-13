@@ -7,13 +7,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/todo-enjoers/backend_v1/internal/config"
 	"github.com/todo-enjoers/backend_v1/internal/model"
+	"github.com/todo-enjoers/backend_v1/internal/pkg/token"
 	"go.uber.org/zap"
 	"os"
 	"time"
 )
 
 // Checking whether the interface "ProviderI" implements the structure "Provider"
-//var _ token.ProviderI = (*Provider)(nil)
+var _ token.ProviderI = (*Provider)(nil)
 
 type Provider struct {
 	publicKey       *rsa.PublicKey

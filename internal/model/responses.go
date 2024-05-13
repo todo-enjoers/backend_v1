@@ -15,9 +15,19 @@ type (
 		AccessToken  string    `json:"access_token"`
 		RefreshToken string    `json:"refresh_token"`
 	}
-	// UserGetMeResponse : Creation TodoType Response from server
+	// UserGetMeResponse : Creation ??? Response from server
 	UserGetMeResponse struct {
 		ID   uuid.UUID `json:"id"`
 		Name string    `json:"name"`
+	}
+
+	// ErrorResponse : Creation Error Response from server
+	ErrorResponse struct {
+		Error string `json:"error"`
+	}
+
+	// UserChangePasswordResponse : ???
+	UserChangePasswordResponse struct {
+		/// ???
 	}
 )

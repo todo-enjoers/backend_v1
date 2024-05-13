@@ -6,7 +6,7 @@ type (
 	// UserDTO : User Data Transfer Object
 	UserDTO struct {
 		ID       uuid.UUID `json:"id"`
-		Login    string    `json:"email"`
+		Login    string    `json:"login"`
 		Password string    `json:"password"`
 	}
 	// TodoDTO : User Data Transfer Object

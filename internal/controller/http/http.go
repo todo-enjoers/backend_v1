@@ -26,8 +26,8 @@ type Controller struct {
 
 func New(
 	store storage.Interface,
-	cfg *config.Config,
 	log *zap.Logger,
+	cfg *config.Config,
 	tokenProvider token.ProviderI) (*Controller, error) {
 	log.Info("initialize controller")
 	ctrl := &Controller{
@@ -59,17 +59,18 @@ func (ctrl *Controller) configureRoutes() {
 			users.POST("/register", ctrl.HandleRegister)
 			users.POST("/login", ctrl.HandleLogin)
 			users.GET("/me", ctrl.HandleGetMe)
+			users.GET("/all", ctrl.HandleGetAll)
 			users.POST("/change-password", ctrl.HandleChangePassword)
-			users.POST("/refresh-token", ctrl.HandleRefreshToken)
+			//users.POST("/refresh-token", ctrl.HandleRefreshToken) ???
 		}
-		todos := api.Group("/todos")
-		{
-			todos.GET("/", ctrl.HandleGetTodos)
-			todos.GET("/{id}", ctrl.HandleGetTodoByID)
-			todos.POST("/", ctrl.HandleCreateTodo)
-			todos.PUT("/{id}", ctrl.HandleUpdateTodo)
-			todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
-		}
+		//todos := api.Group("/todos")
+		////{
+		////	todos.GET("/", ctrl.HandleGetTodos)
+		////	todos.GET("/{id}", ctrl.HandleGetTodoByID)
+		////	todos.POST("/", ctrl.HandleCreateTodo)
+		////	todos.PUT("/{id}", ctrl.HandleUpdateTodo)
+		////	todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
+		////}
 	}
 }
 

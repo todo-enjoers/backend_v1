@@ -2,10 +2,9 @@ package controller
 
 import (
 	"context"
-	"go.uber.org/zap"
 )
 
 type Controller interface {
-	Run(_ context.Context, log *zap.Logger) error
+	Run(ctx context.Context) error
 	Shutdown(ctx context.Context) error
 }

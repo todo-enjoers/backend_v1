@@ -8,8 +8,8 @@ import (
 	controller "github.com/todo-enjoers/backend_v1/internal/controller/http"
 	"github.com/todo-enjoers/backend_v1/internal/pkg/token/jwt"
 	"github.com/todo-enjoers/backend_v1/internal/storage"
-	"github.com/todo-enjoers/backend_v1/internal/storage/client"
 	"github.com/todo-enjoers/backend_v1/internal/storage/pgx"
+	"github.com/todo-enjoers/backend_v1/pkg/postgres"
 	"go.uber.org/zap"
 )
 
@@ -44,9 +44,9 @@ func main() {
 	}
 
 	//init pool
-	pool, err = client.New(ctx, cfg)
+	pool, err = postgres.New(cfg, log)
 	if err != nil {
-		log.Fatal("Failed to initialize logger", zap.Error(err))
+		log.Fatal("Failed to initialize pool", zap.Error(err))
 	}
 
 	//init storage
@@ -56,7 +56,7 @@ func main() {
 	}
 
 	//init server
-	server, err = http.New(store, cfg, log)
+	server, err = http.New(store, cfg, log, provider)
 	if err != nil {
 		log.Fatal("Failed to initialize server", zap.Error(err))
 	}

@@ -38,7 +38,7 @@ func main() {
 	defer cancel()
 
 	//init logger
-	log, _ = zap.NewProduction() //no error because func recently don't  return a error
+	log, _ = zap.NewProduction() //no error because func recently don't return an error
 
 	//init config
 	cfg, err = config.New(ctx)

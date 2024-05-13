@@ -124,6 +124,6 @@ func (provider *Provider) CreateTokenForUser(userID uuid.UUID, isAccess bool) (s
 	}
 
 	// JWT token is signed with claims
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	return token.SignedString(provider.privateKey)
+	JWToken := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	return JWToken.SignedString(provider.privateKey)
 }

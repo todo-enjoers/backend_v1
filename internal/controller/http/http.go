@@ -52,8 +52,7 @@ func (ctrl *Controller) configure() error {
 
 func (ctrl *Controller) configureRoutes() {
 	log.Info("configuring routes")
-	router := ctrl.server
-	api := router.Group("/api")
+	api := ctrl.server.Group("/api")
 	{
 		users := api.Group("/users")
 		{

@@ -11,6 +11,8 @@ import (
 	"github.com/todo-enjoers/backend_v1/internal/storage/pgx"
 	"github.com/todo-enjoers/backend_v1/pkg/postgres"
 	"go.uber.org/zap"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -23,9 +25,17 @@ func main() {
 		cfg      *config.Config
 		pool     *pgxpool.Pool
 		store    storage.Interface
+		cancel   context.CancelFunc
 	)
 
-	ctx = context.Background()
+	ctx, cancel = signal.NotifyContext(
+		context.Background(),
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT,
+	)
+	defer cancel()
 
 	//init logger
 	log, _ = zap.NewProduction() //no error because func recently don't  return a error
@@ -72,4 +82,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to run server", zap.Error(err))
 	}
+
+	<-ctx.Done()
+	log.Info("[Graceful Shutdown]")
 }

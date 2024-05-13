@@ -63,12 +63,14 @@ func NewProvider(cfg *config.Config, log *zap.Logger) (*Provider, error) {
 
 func (provider *Provider) readKeyFunc(token *jwt.Token) (interface{}, error) {
 	// readKeyFunc is a reader of public key.
-	if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+	switch token.Method.(type) {
+	case *jwt.SigningMethodRSA:
+		return provider.publicKey, nil
+	default:
 		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 	}
-
-	return provider.publicKey, nil
 }
+
 func (provider *Provider) GetDataFromToken(token string) (*model.UserDataInToken, error) {
 	parsed, err := jwt.ParseWithClaims(token, &CustomClaims{}, provider.readKeyFunc)
 	if err != nil {

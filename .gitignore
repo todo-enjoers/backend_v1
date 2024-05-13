@@ -7,6 +7,7 @@
 *.test
 
 *.out
+*.o
 
 go.work
 .idea

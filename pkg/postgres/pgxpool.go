@@ -15,7 +15,7 @@ func New(cfg *config.Config, log *zap.Logger) (*pgxpool.Pool, error) {
 	var pool *pgxpool.Pool
 	log.Info("initializing postgres client")
 
-	c, err := pgxpool.ParseConfig(cfg.Postgres.DataBaseDNS)
+	c, err := pgxpool.ParseConfig(cfg.Postgres.DataBaseDNS())
 	if err != nil {
 		return nil, fmt.Errorf("error while parsing db uri: %w", err)
 	}

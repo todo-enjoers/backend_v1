@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/todo-enjoers/backend_v1/internal/config"
+	"github.com/todo-enjoers/backend_v1/internal/controller"
 	"github.com/todo-enjoers/backend_v1/internal/controller/http"
-	controller "github.com/todo-enjoers/backend_v1/internal/controller/http"
 	"github.com/todo-enjoers/backend_v1/internal/pkg/token/jwt"
 	"github.com/todo-enjoers/backend_v1/internal/storage"
 	"github.com/todo-enjoers/backend_v1/internal/storage/pgx"
@@ -56,7 +56,7 @@ func main() {
 	}
 
 	//init server
-	server, err = http.New(store, cfg, log, provider)
+	server, err = http.New(store, log, cfg, provider)
 	if err != nil {
 		log.Fatal("Failed to initialize server", zap.Error(err))
 	}
@@ -68,7 +68,7 @@ func main() {
 			zap.Error(server.Shutdown(ctx)),
 		)
 	}()
-	err = server.Run(ctx, log)
+	err = server.Run(ctx)
 	if err != nil {
 		log.Fatal("Failed to run server", zap.Error(err))
 	}

@@ -28,7 +28,8 @@ func New(
 	store storage.Interface,
 	log *zap.Logger,
 	cfg *config.Config,
-	tokenProvider token.ProviderI) (*Controller, error) {
+	tokenProvider token.ProviderI,
+) (*Controller, error) {
 	log.Info("initialize controller")
 	ctrl := &Controller{
 		server: echo.New(),

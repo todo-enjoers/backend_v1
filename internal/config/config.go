@@ -9,13 +9,6 @@ import (
 	"path"
 )
 
-//type Config struct {
-//	BindAddress string `config:"bind_address,short=a"`
-//	BindPort    string `config:"bind_port,short=p"`
-//	DataBaseDNS string `config:"data_base_dns,short=d"`
-//	JWT         string `config:"jwt"`
-//}
-
 type Config struct {
 	JWT        *JWT
 	Controller *Controller
@@ -44,7 +37,7 @@ func New(ctx context.Context) (*Config, error) {
 		},
 	}
 	loader := confita.NewLoader(env.NewBackend(), flags.NewBackend())
-	if err = loader.Load(context.Background(), cfg); err != nil {
+	if err = loader.Load(ctx, cfg); err != nil {
 		return nil, err
 	}
 	return cfg, nil

@@ -75,7 +75,12 @@ func (ctrl *Controller) HandleLogin(c echo.Context) error {
 	// Binding request
 	if err := c.Bind(&request); err != nil {
 		ctrl.log.Error("error while binding request", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, echo.Map{"error": err.Error()}) //change
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
 	}
 
 	// Getting the "User" from DB
@@ -86,7 +91,7 @@ func (ctrl *Controller) HandleLogin(c echo.Context) error {
 	}
 
 	// Compare hashed password from request and from DB
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password)); err != nil {
+	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password)); err != nil {
 		ctrl.log.Error("invalid password", zap.Error(controller.InvalidPassword))
 		return c.JSON(http.StatusUnauthorized, echo.Map{"error": err.Error()}) // StatusUnauthorized or StatusBadRequest
 	}
@@ -110,7 +115,7 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 	var request model.UserChangePasswordRequest
 
 	// Validate user with Token returning id
-	id, err := ctrl.getUserIDFromAccessToken(c)
+	id, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(http.StatusUnauthorized, echo.Map{"error": err.Error()})
@@ -118,7 +123,7 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 	ctrl.log.Info("HandleChangePassword : logged in", zap.String("user_id", id.String()))
 
 	// Binding request
-	if err := c.Bind(&request); err != nil {
+	if err = c.Bind(&request); err != nil {
 		ctrl.log.Error("error while binding request", zap.Error(err))
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": err.Error()})
 	}
@@ -131,44 +136,44 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 	}
 
 	// Compare hashed password from request and from DB
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.OldPassword)); err != nil {
+	// TODO: write function to encapsulate this logic. Function must have same signature as CompareHashAndPassword
+	err = ctrl.CompareHashes([]byte(user.Password), []byte(request.OldPassword))
+	if err != nil {
 		ctrl.log.Error("invalid password", zap.Error(controller.InvalidPassword)) // return controller.InvalidPassword or echo.map
-		return c.JSON(http.StatusUnauthorized, echo.Map{"error": err.Error()}) // StatusUnauthorized or StatusBadRequest
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.InvalidPassword.Error(),
+			},
+		)
 	}
-
 	// Compare NewPassword and  NewPasswordAgain
 	if request.NewPassword != request.NewPasswordAgain {
-		ctrl.log.Error("password are not equal", zap.Error(controller.ErrPasswordAreNotEqual))// return controller.ErrPasswordAreNotEqual or echo.map
-		return c.JSON(http.StatusConflict, controller.ErrPasswordAreNotEqual) // StatusConflict or what?
+		ctrl.log.Error("password are not equal", zap.Error(controller.ErrPasswordAreNotEqual)) // return controller.ErrPasswordAreNotEqual or echo.map
+		return c.JSON(http.StatusConflict, controller.ErrPasswordAreNotEqual)                  // StatusConflict or what?
 	}
 
 	// Hashing NewPassword from request
-	HashedNewPassword, err := bcrypt.GenerateFromPassword([]byte(request.NewPassword), bcrypt.DefaultCost)
+	newHashedPassword, err := ctrl.PasswordToHash(request.NewPassword)
 	if err != nil {
 		return err
 	}
 
 	// Inserting NewPassword in DB
-	if err = ctrl.store.User().ChangePassword(c.Request().Context(), string(HashedNewPassword), user.ID) // ???
+	err = ctrl.store.User().ChangePassword(c.Request().Context(), string(newHashedPassword), user.ID) // ???
 	if err != nil {
 		ctrl.log.Error("error while inserting in DB changed password", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	response := &model.UserChangePasswordResponse{
-		OldPassword: request.OldPassword,
-		NewPassword: HashedNewPassword,
-		NewPasswordAgain: HashedNewPassword,
-	}
-
-	return c.JSON(http.StatusOK, response)
+	return c.NoContent(http.StatusOK)
 
 }
 
 func (ctrl *Controller) HandleGetMe(c echo.Context) error {
 
 	// Validate user with Token returning id
-	requestUserID, err := ctrl.getUserIDFromAccessToken(c)
+	requestUserID, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(http.StatusUnauthorized, echo.Map{"error": err.Error()}) // here another question
@@ -194,12 +199,17 @@ func (ctrl *Controller) HandleGetAll(c echo.Context) error {
 	var list []model.UserDTO
 
 	// Validate user with Token returning id
-	requestUserID, err := ctrl.getUserIDFromAccessToken(c)
+	requestUserID, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
-		return c.JSON(http.StatusUnauthorized, echo.Map{"error": err.Error()}) // here another question
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
 	}
-	ctrl.log.Info("HandleGetMe: logged in", zap.String("user_id", requestUserID.String()))
+	ctrl.log.Info("HandleGetAll: logged in", zap.String("user_id", requestUserID.String()))
 
 	list, err = ctrl.store.User().GetAll(c.Request().Context())
 	if err != nil {

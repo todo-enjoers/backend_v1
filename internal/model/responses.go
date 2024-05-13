@@ -25,9 +25,4 @@ type (
 	ErrorResponse struct {
 		Error string `json:"error"`
 	}
-
-	// UserChangePasswordResponse : ???
-	UserChangePasswordResponse struct {
-		/// ???
-	}
 )

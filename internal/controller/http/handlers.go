@@ -24,13 +24,19 @@ func (ctrl *Controller) HandleRegister(c echo.Context) error {
 	// Validate request
 	if ok, err := request.Validate(); ok {
 		ctrl.log.Error("invalid request", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, echo.Map{"error": err.Error()})
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: storage.ErrBadRegisterRequest.Error(),
+			},
+		)
 	}
 
 	// Hashing password from request
 	HashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		storage.ErrHashingPass = err
+		return storage.ErrHashingPass
 	}
 
 	// Taking user from UserDTO with new data
@@ -46,18 +52,33 @@ func (ctrl *Controller) HandleRegister(c echo.Context) error {
 	if err != nil {
 		if errors.Is(err, storage.ErrAlreadyExists) {
 			ctrl.log.Error("user already exists", zap.Error(err))
-			return c.JSON(http.StatusConflict, echo.Map{"error": err.Error()})
+			return c.JSON(
+				http.StatusConflict,
+				model.ErrorResponse{
+					Error: storage.ErrAlreadyExists.Error(),
+				},
+			)
 		}
 		ctrl.log.Error("got error while creating user", zap.Error(err))
-		return c.JSON(http.StatusBadRequest, echo.Map{"error": err.Error()})
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: storage.ErrCreateUser.Error(),
+			},
+		)
 	}
 	ctrl.log.Info("successfully created user")
 
 	// Generating token's for the user
 	accessToken, refreshToken, err := ctrl.generateAccessAndRefreshTokenForUser(user.ID)
 	if err != nil {
-		ctrl.log.Error("error while creating tokens", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
+		ctrl.log.Error("got error while creating tokens", zap.Error(err))
+		return c.JSON(
+			http.StatusInternalServerError,
+			model.ErrorResponse{
+				Error: storage.ErrCreateToken.Error(),
+			},
+		)
 	}
 
 	response := model.UserRegisterResponse{
@@ -87,13 +108,23 @@ func (ctrl *Controller) HandleLogin(c echo.Context) error {
 	user, err := ctrl.store.User().GetByLogin(c.Request().Context(), request.Login)
 	if err != nil {
 		ctrl.log.Error("error while getting user by login from DB", zap.Error(err))
-		return c.JSON(http.StatusUnauthorized, echo.Map{"error": err.Error()})
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: storage.ErrGetByLogin.Error(),
+			},
+		)
 	}
 
 	// Compare hashed password from request and from DB
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password)); err != nil {
 		ctrl.log.Error("invalid password", zap.Error(controller.InvalidPassword))
-		return c.JSON(http.StatusUnauthorized, echo.Map{"error": err.Error()}) // StatusUnauthorized or StatusBadRequest
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: storage.ErrComparingPasswords.Error(),
+			},
+		)
 	}
 
 	// Generating access, refresh tokens for logged user

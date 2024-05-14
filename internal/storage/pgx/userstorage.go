@@ -88,7 +88,7 @@ func (store *userStorage) GetByLogin(ctx context.Context, login string) (*model.
 	u := new(model.UserDTO)
 	err := store.pool.QueryRow(ctx, queryGetByLogin, login).Scan(&u.ID, &u.Login, &u.Password)
 	if err != nil {
-		return nil, err //add custom error
+		return nil, storage.ErrGetByLogin
 	}
 	return u, nil
 }

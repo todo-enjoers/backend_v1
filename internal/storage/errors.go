@@ -34,7 +34,7 @@ var (
 	ErrGetByID = errors.New("got error while getting by id")
 
 	// ErrHashingPass error
-	ErrHashingPass = errors.New("got error while hashing password")
+	ErrHashingPassword = errors.New("got error while hashing password")
 
 	// ErrComparingPasswords error
 	ErrComparingPasswords = errors.New("got error while comparing passwords")

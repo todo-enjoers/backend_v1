@@ -12,6 +12,7 @@ import (
 	"net/http"
 )
 
+// ./api/users
 func (ctrl *Controller) HandleRegister(c echo.Context) error {
 	var request model.UserRegisterRequest
 
@@ -131,7 +132,12 @@ func (ctrl *Controller) HandleLogin(c echo.Context) error {
 	access, refresh, err := ctrl.generateAccessAndRefreshTokenForUser(user.ID)
 	if err != nil {
 		ctrl.log.Error("error while creating tokens", zap.Error(err))
-		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
+		return c.JSON(
+			http.StatusInternalServerError,
+			model.ErrorResponse{
+				Error: storage.ErrCreateToken.Error(),
+			},
+		)
 	}
 
 	response := &model.UserLoginResponse{
@@ -167,7 +173,6 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 	}
 
 	// Compare hashed password from request and from DB
-	// TODO: write function to encapsulate this logic. Function must have same signature as CompareHashAndPassword
 	err = ctrl.CompareHashes([]byte(user.Password), []byte(request.OldPassword))
 	if err != nil {
 		ctrl.log.Error("invalid password", zap.Error(controller.InvalidPassword)) // return controller.InvalidPassword or echo.map
@@ -250,4 +255,21 @@ func (ctrl *Controller) HandleGetAll(c echo.Context) error {
 	// response ???
 
 	return c.JSON(http.StatusOK, list)
+}
+
+// ./api/groups
+func (ctrl *Controller) HandleCreateGroup(c echo.Context) error {
+	return nil
+}
+
+func (ctrl *Controller) HandleGetGroup(c echo.Context) error {
+	return nil
+}
+
+func (ctrl *Controller) HandleCreateInvite(c echo.Context) error {
+	return nil
+}
+
+func (ctrl *Controller) HandleGetMyGroups(c echo.Context) error {
+	return nil
 }

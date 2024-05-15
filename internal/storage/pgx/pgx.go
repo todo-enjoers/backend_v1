@@ -33,5 +33,3 @@ func New(pool *pgxpool.Pool, log *zap.Logger) (*Storage, error) {
 func (s *Storage) User() storage.UserStorage {
 	return s.user
 }
-
-//*

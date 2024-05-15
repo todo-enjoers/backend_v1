@@ -70,7 +70,7 @@ func (store *userStorage) Create(ctx context.Context, user *model.UserDTO) error
 		if errors.As(err, &pgErr) && pgerrcode.UniqueViolation == pgErr.Code {
 			return storage.ErrAlreadyClosed
 		}
-		return fmt.Errorf("err while creating user: %w", err)
+		return fmt.Errorf("err while creating user: %w", err) //Need to fix error here
 	}
 	return nil
 }
@@ -79,7 +79,7 @@ func (store *userStorage) GetByID(ctx context.Context, id uuid.UUID) (*model.Use
 	u := new(model.UserDTO)
 	err := store.pool.QueryRow(ctx, queryGetByID, id).Scan(&u.ID, &u.Login, &u.Password)
 	if err != nil {
-		return nil, err
+		return nil, storage.ErrGetByID
 	}
 	return u, nil
 }

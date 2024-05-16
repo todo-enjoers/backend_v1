@@ -61,7 +61,7 @@ func (ctrl *Controller) configureRoutes() {
 			users.GET("/me", ctrl.HandleGetMe)
 			users.GET("/all", ctrl.HandleGetAll)
 			users.POST("/change-password", ctrl.HandleChangePassword)
-			//users.POST("/refresh-token", ctrl.HandleRefreshToken) ???
+			users.POST("/refresh-token", ctrl.HandleRefreshToken)
 		}
 
 		//todos := api.Group("/todos")

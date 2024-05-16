@@ -30,8 +30,6 @@ type (
 )
 
 func (req *UserRegisterRequest) Validate() (ok bool, err error) {
-	err = nil
-
 	if !strings.Contains(req.Login, "@") && len(req.Login) > 7 {
 		err = errors.New("wrong email address")
 		return false, err

@@ -28,7 +28,7 @@ func (ctrl *Controller) HandleRegister(c echo.Context) error {
 	}
 
 	// Validate request
-	if ok, err := request.Validate(); ok {
+	if ok, err := request.Validate(); !ok {
 		ctrl.log.Error("invalid request", zap.Error(err))
 		return c.JSON(
 			http.StatusBadRequest,
@@ -188,7 +188,7 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 	if err != nil {
 		ctrl.log.Error("error while getting user by login from DB", zap.Error(err))
 		return c.JSON(
-			http.StatusUnauthorized,
+			http.StatusNoContent,
 			model.ErrorResponse{
 				Error: storage.ErrGetByLogin.Error(),
 			},
@@ -200,7 +200,7 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 	if err != nil {
 		ctrl.log.Error("invalid password", zap.Error(controller.InvalidPassword))
 		return c.JSON(
-			http.StatusUnauthorized,
+			http.StatusInternalServerError,
 			model.ErrorResponse{
 				Error: controller.InvalidPassword.Error(),
 			},
@@ -211,7 +211,7 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 	if request.NewPassword != request.NewPasswordAgain {
 		ctrl.log.Error("password are not equal", zap.Error(controller.ErrPasswordAreNotEqual))
 		return c.JSON(
-			http.StatusConflict,
+			http.StatusNotAcceptable,
 			model.ErrorResponse{
 				Error: controller.ErrPasswordAreNotEqual.Error(), // StatusConflict or what?
 			},
@@ -222,7 +222,7 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 	newHashedPassword, err := ctrl.PasswordToHash(request.NewPassword)
 	if err != nil {
 		return c.JSON(
-			http.StatusBadRequest,
+			http.StatusInternalServerError,
 			model.ErrorResponse{
 				Error: storage.ErrHashingPassword.Error(),
 			},
@@ -234,7 +234,7 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 	if err != nil {
 		ctrl.log.Error("error while inserting in DB changed password", zap.Error(err))
 		return c.JSON(
-			http.StatusInternalServerError,
+			http.StatusConflict,
 			model.ErrorResponse{
 				Error: controller.ErrInsertingInDB.Error(),
 			},
@@ -269,7 +269,7 @@ func (ctrl *Controller) HandleGetMe(c echo.Context) error {
 	if err != nil {
 		ctrl.log.Error("error while getting user by id from DB", zap.Error(err))
 		return c.JSON(
-			http.StatusConflict,
+			http.StatusNoContent,
 			model.ErrorResponse{
 				Error: storage.ErrGetByID.Error(),
 			},
@@ -304,13 +304,13 @@ func (ctrl *Controller) HandleGetAll(c echo.Context) error {
 	if err != nil {
 		ctrl.log.Error("error while getting users by id from DB", zap.Error(err))
 		return c.JSON(
-			http.StatusConflict,
+			http.StatusNoContent,
 			model.ErrorResponse{
 				Error: storage.ErrGetByID.Error(),
 			},
 		)
 	}
-	
+
 	return c.JSON(http.StatusOK, list)
 }
 

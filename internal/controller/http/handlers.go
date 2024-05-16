@@ -251,3 +251,33 @@ func (ctrl *Controller) HandleGetAll(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, list)
 }
+
+func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
+	var request model.TodoCreateRequest
+	user, err := ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		return err
+	}
+
+	if err := c.Bind(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": err.Error()})
+	}
+	todo := &model.TodoDTO{
+		ID:          uuid.New(),
+		Name:        request.Name,
+		Description: request.Description,
+		IsCompleted: false,
+		CreatedBy:   user,
+	}
+
+	if err = ctrl.store.Todo().Create(c.Request().Context(), todo); err != nil {
+		return err
+	}
+	ctrl.log.Info("successfully created todo", zap.Any("todo", todo))
+	return c.JSON(http.StatusCreated, todo)
+
+}
+
+/*func (ctrl *Controller) HandleGetTodosBtID(c echo.Context) error {
+
+}*/

@@ -12,11 +12,21 @@ var _ storage.Interface = (*Storage)(nil)
 type Storage struct {
 	pool *pgxpool.Pool
 	log  *zap.Logger
-	user *userStorage //*
+	user *userStorage
+	todo *todoStorage
 }
 
 func New(pool *pgxpool.Pool, log *zap.Logger) (*Storage, error) {
-	users, err := newUserStorage(pool, log)
+	var (
+		users *userStorage
+		todos *todoStorage
+		err   error
+	)
+	users, err = newUserStorage(pool, log)
+	if err != nil {
+		return nil, err
+	}
+	todos, err = newTodoStorage(pool, log)
 	if err != nil {
 		return nil, err
 	}
@@ -25,6 +35,7 @@ func New(pool *pgxpool.Pool, log *zap.Logger) (*Storage, error) {
 		pool: pool,
 		log:  log,
 		user: users,
+		todo: todos,
 	}
 
 	return store, nil
@@ -34,4 +45,6 @@ func (s *Storage) User() storage.UserStorage {
 	return s.user
 }
 
-//*
+func (s *Storage) Todo() storage.TodoStorage {
+	return s.todo
+}

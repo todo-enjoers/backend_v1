@@ -63,14 +63,16 @@ func (ctrl *Controller) configureRoutes() {
 			users.POST("/change-password", ctrl.HandleChangePassword)
 			//users.POST("/refresh-token", ctrl.HandleRefreshToken) ???
 		}
-		//todos := api.Group("/todos")
-		////{
-		////	todos.GET("/", ctrl.HandleGetTodos)
-		////	todos.GET("/{id}", ctrl.HandleGetTodoByID)
-		////	todos.POST("/", ctrl.HandleCreateTodo)
-		////	todos.PUT("/{id}", ctrl.HandleUpdateTodo)
-		////	todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
-		////}
+		todos := api.Group("/todos")
+		{
+			//	todos.GET("/", ctrl.HandleGetTodos)
+			//	todos.GET("/{id}", ctrl.HandleGetTodoByID)
+			todos.POST("/", ctrl.HandleCreateTodo)
+			//	todos.PUT("/{id}", ctrl.HandleUpdateTodo)
+			//	todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
+			//  todos.PUT("/{id}/status", ctrl.HandleChangeStatus)
+			//
+		}
 	}
 }
 

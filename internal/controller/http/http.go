@@ -64,14 +64,14 @@ func (ctrl *Controller) configureRoutes() {
 			users.POST("/refresh-token", ctrl.HandleRefreshToken)
 		}
 
-		//todos := api.Group("/todos")
-		////{
+		todos := api.Group("/todos")
+		{
 		////	todos.GET("/", ctrl.HandleGetTodos)
 		////	todos.GET("/{id}", ctrl.HandleGetTodoByID)
-		////	todos.POST("/", ctrl.HandleCreateTodo)
+			todos.POST("/", ctrl.HandleCreateTodo)
 		////	todos.PUT("/{id}", ctrl.HandleUpdateTodo)
 		////	todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
-		////}
+		}
 
 		//groups := api.Group("/groups")
 		//{

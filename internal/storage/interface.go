@@ -13,7 +13,15 @@ type UserStorage interface {
 	ChangePassword(ctx context.Context, password string, id uuid.UUID) error
 	GetAll(ctx context.Context) ([]model.UserDTO, error)
 }
-
+type TodoStorage interface {
+	Create(ctx context.Context, todo *model.TodoDTO) error
+	//GetByID(ctx context.Context, id uuid.UUID) (*model.TodoDTO, error)
+	//GetAll(ctx context.Context) ([]model.TodoDTO, error)
+	//ChangeTodos(ctx context.Context, todo *model.TodoDTO) error
+	//DeleteTodos(ctx context.Context, id uuid.UUID) error
+	//ChangeStatus(ctx context.Context, todo *model.TodoDTO) error
+}
 type Interface interface {
 	User() UserStorage
+	Todo() TodoStorage
 }

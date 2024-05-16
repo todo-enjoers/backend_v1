@@ -10,11 +10,11 @@ import (
 	"strings"
 )
 
-func (ctrl *Controller) generateAccessAndRefreshTokenForUser(userID uuid.UUID) (access string, refreshToken string, err error) {
-	//Creating access token for userID if isAccess is true
-	access, err = ctrl.token.CreateTokenForUser(userID, true)
+func (ctrl *Controller) generateAccessAndRefreshTokenForUser(userID uuid.UUID) (accessToken string, refreshToken string, err error) {
+	//Creating accessToken token for userID if isAccess is true
+	accessToken, err = ctrl.token.CreateTokenForUser(userID, true)
 	if err != nil {
-		return "", "", fmt.Errorf("error creating access token for userID: %w", err)
+		return "", "", fmt.Errorf("error creating accessToken token for userID: %w", err)
 	}
 	//Creating refresh token for userID if isAccess is false
 	refreshToken, err = ctrl.token.CreateTokenForUser(userID, false)

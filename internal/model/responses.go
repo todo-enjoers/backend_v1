@@ -15,6 +15,12 @@ type (
 		AccessToken  string    `json:"access_token"`
 		RefreshToken string    `json:"refresh_token"`
 	}
+	// UserCoupleTokensResponse : Response of generation a couple of tokens
+	UserCoupleTokensResponse struct {
+		ID           uuid.UUID `json:"id"`
+		AccessToken  string    `json:"access_token"`
+		RefreshToken string    `json:"refresh_token"`
+	}
 	// UserGetMeResponse : Creation ??? Response from server
 	UserGetMeResponse struct {
 		ID   uuid.UUID `json:"id"`

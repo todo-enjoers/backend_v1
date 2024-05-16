@@ -252,6 +252,8 @@ func (ctrl *Controller) HandleGetMe(c echo.Context) error {
 		err           error
 		requestUserID uuid.UUID
 	)
+
+	// Taking a UserID from request
 	requestUserID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
@@ -287,7 +289,7 @@ func (ctrl *Controller) HandleGetMe(c echo.Context) error {
 func (ctrl *Controller) HandleGetAll(c echo.Context) error {
 	var list []model.UserDTO
 
-	// Validate user with Token returning id
+	// Taking a UserID from request
 	requestUserID, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
@@ -312,6 +314,56 @@ func (ctrl *Controller) HandleGetAll(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, list)
+}
+
+func (ctrl *Controller) HandleRefreshToken(c echo.Context) error {
+	var (
+		request model.UserCoupleTokensRequest
+		//refreshToken  string
+		requestUserID uuid.UUID
+		err           error
+	)
+	// Binding request
+	if err := c.Bind(&request); err != nil {
+		ctrl.log.Error("could not bind request", zap.Error(err))
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: controller.ErrBindingRequest.Error(),
+			},
+		)
+	}
+
+	// Taking a UserID from request
+	requestUserID, err = ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+
+	// Generating token's for the user
+	accessToken, refreshToken, err := ctrl.generateAccessAndRefreshTokenForUser(requestUserID)
+	if err != nil {
+		ctrl.log.Error("got error while creating tokens", zap.Error(err))
+		return c.JSON(
+			http.StatusInternalServerError,
+			model.ErrorResponse{
+				Error: storage.ErrCreateToken.Error(),
+			},
+		)
+	}
+
+	response := &model.UserCoupleTokensResponse{
+		ID:           requestUserID,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}
+	return c.JSON(http.StatusCreated, response)
 }
 
 // ./api/groups

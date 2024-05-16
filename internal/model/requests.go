@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"github.com/google/uuid"
 	"strings"
 )
 
@@ -11,10 +12,16 @@ type (
 		Login    string `json:"login"`
 		Password string `json:"password"`
 	}
-	// UserLoginRequest :Authorization Request from user
+	// UserLoginRequest : Authorization Request from user
 	UserLoginRequest struct {
 		Login    string `json:"login"`
 		Password string `json:"password"`
+	}
+	// UserCoupleTokensRequest : Request of generation a couple of tokens
+	UserCoupleTokensRequest struct {
+		ID           uuid.UUID `json:"id"`
+		AccessToken  string    `json:"access_token"`
+		RefreshToken string    `json:"refresh_token"`
 	}
 	// UserChangePasswordRequest : Changing password Request from user
 	UserChangePasswordRequest struct {
@@ -30,10 +37,8 @@ type (
 )
 
 func (req *UserRegisterRequest) Validate() (ok bool, err error) {
-	err = nil
-
 	if !strings.Contains(req.Login, "@") && len(req.Login) > 7 {
-		err = errors.New("email address is required")
+		err = errors.New("wrong email address")
 		return false, err
 	}
 

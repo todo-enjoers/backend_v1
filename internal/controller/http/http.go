@@ -61,18 +61,25 @@ func (ctrl *Controller) configureRoutes() {
 			users.GET("/me", ctrl.HandleGetMe)
 			users.GET("/all", ctrl.HandleGetAll)
 			users.POST("/change-password", ctrl.HandleChangePassword)
-			//users.POST("/refresh-token", ctrl.HandleRefreshToken) ???
+			users.POST("/refresh-token", ctrl.HandleRefreshToken)
 		}
+
 		todos := api.Group("/todos")
 		{
-			//	todos.GET("/", ctrl.HandleGetTodos)
-			//	todos.GET("/{id}", ctrl.HandleGetTodoByID)
+		////	todos.GET("/", ctrl.HandleGetTodos)
+		////	todos.GET("/{id}", ctrl.HandleGetTodoByID)
 			todos.POST("/", ctrl.HandleCreateTodo)
-			//	todos.PUT("/{id}", ctrl.HandleUpdateTodo)
-			//	todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
-			//  todos.PUT("/{id}/status", ctrl.HandleChangeStatus)
-			//
+		////	todos.PUT("/{id}", ctrl.HandleUpdateTodo)
+		////	todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
 		}
+
+		//groups := api.Group("/groups")
+		//{
+		//	groups.POST("/", ctrl.HandleCreateGroup)
+		//	groups.GET("/{id}", ctrl.HandleGetGroup)
+		//	groups.POST("/create_invite", ctrl.HandleCreateInvite)
+		//	groups.GET("/me/groups", ctrl.HandleGetMyGroups)
+		//}
 	}
 }
 

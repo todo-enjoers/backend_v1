@@ -61,6 +61,7 @@ func NewProvider(cfg *config.Config, log *zap.Logger) (*Provider, error) {
 	return provider, nil
 }
 
+// readKeyFunc : reading key function
 func (provider *Provider) readKeyFunc(token *jwt.Token) (interface{}, error) {
 	// readKeyFunc is a reader of public key.
 	switch token.Method.(type) {

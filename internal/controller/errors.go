@@ -31,4 +31,10 @@ var (
 
 	// ErrValidationToken error
 	ErrValidationToken = errors.New("could not validate access token from headers")
+
+	// ErrInsertingInDB error
+	ErrInsertingInDB = errors.New("could not insert into db")
+
+	// ErrBindingRequest error
+	ErrBindingRequest = errors.New("could not bind request")
 )

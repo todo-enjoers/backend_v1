@@ -310,9 +310,7 @@ func (ctrl *Controller) HandleGetAll(c echo.Context) error {
 			},
 		)
 	}
-
-	// response ???
-
+	
 	return c.JSON(http.StatusOK, list)
 }
 

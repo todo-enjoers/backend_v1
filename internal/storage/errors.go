@@ -33,7 +33,7 @@ var (
 	// ErrGetByID error
 	ErrGetByID = errors.New("got error while getting by id")
 
-	// ErrHashingPass error
+	// ErrHashingPassword error
 	ErrHashingPassword = errors.New("got error while hashing password")
 
 	// ErrComparingPasswords error

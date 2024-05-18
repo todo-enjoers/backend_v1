@@ -2,6 +2,8 @@ package pgx
 
 import (
 	"context"
+	"fmt"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/todo-enjoers/backend_v1/internal/model"
 	"github.com/todo-enjoers/backend_v1/internal/storage"
@@ -25,7 +27,10 @@ const (
 
 CREATE INDEX IF NOT EXISTS todos_created_by_index ON todos(created_by);
 `
-	queryCreate = `INSERT INTO todos (id, name, description, created_by, project_id, "column" )VALUES ($1, $2, $3, $4, $5, $6)`
+	queryCreate      = `INSERT INTO todos (id, name, description, created_by, project_id, "column" )VALUES ($1, $2, $3, $4, $5, $6)`
+	queryTodoGetByID = `SELECT created_by, name, id, description FROM todos WHERE id = $1`
+	queryGetAllTodos = `SELECT t.id, t.name, t.description, t.is_completed, t.project_id
+FROM todos AS t ;`
 )
 
 type todoStorage struct {
@@ -54,6 +59,36 @@ func (store *todoStorage) Create(ctx context.Context, todo *model.TodoDTO) error
 	return err
 }
 
-func (store *todoStorage) Get(ctx context.Context, id string) (*model.TodoDTO, error) {
-	return store, nil
+func (store *todoStorage) GetByID(ctx context.Context, id uuid.UUID) (*model.TodoDTO, error) {
+	var todo model.TodoDTO
+	err := store.pool.QueryRow(ctx, queryTodoGetByID, id).Scan(&todo.CreatedBy, &todo.Name, &todo.ID, &todo.Description)
+	if err != nil {
+		return nil, err
+	}
+	return &todo, nil
+}
+
+func (store *todoStorage) GetAll(ctx context.Context) ([]model.TodoDTO, error) {
+	var res []model.TodoDTO
+	rows, err := store.pool.Query(ctx, queryGetAllTodos)
+	if err != nil {
+		return nil, fmt.Errorf("error while querying all todos: %w", err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var temp model.TodoDTO
+		err = rows.Scan(&temp.IsCompleted, &temp.Name, &temp.ID, &temp.Description)
+		if err != nil {
+			return nil, fmt.Errorf("error while scanning todos: %w", err)
+		}
+		res = append(res, temp)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("unwrapped error: %w", err)
+	}
+
+	return res, err
 }

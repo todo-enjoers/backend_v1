@@ -66,11 +66,11 @@ func (ctrl *Controller) configureRoutes() {
 
 		todos := api.Group("/todos")
 		{
-		////	todos.GET("/", ctrl.HandleGetTodos)
-		////	todos.GET("/{id}", ctrl.HandleGetTodoByID)
+			////	todos.GET("/", ctrl.HandleGetTodos)
+			todos.GET("/{id}", ctrl.HandleGetTodosById)
 			todos.POST("/", ctrl.HandleCreateTodo)
-		////	todos.PUT("/{id}", ctrl.HandleUpdateTodo)
-		////	todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
+			////	todos.PUT("/{id}", ctrl.HandleUpdateTodo)
+			////	todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
 		}
 
 		//groups := api.Group("/groups")

@@ -422,13 +422,23 @@ func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 
 }
 
-/*func (ctrl *Controller) HandleGetTodos(c echo.Context) error {
-	user, err := ctrl.getUserIDFromRequest(c.Request())
+func (ctrl *Controller) HandleGetTodosById(c echo.Context) error {
+	id := c.Param("id")
+	todoID, err := uuid.Parse(id)
 	if err != nil {
-		rows := ctrl.store.User().GetByID(c.Request())
+		return c.JSON(http.StatusBadRequest, model.ErrorResponse{
+			Error: "Invalid todo ID format",
+		})
 	}
-}*/
 
-/*func (ctrl *Controller) HandleGetTodosBtID(c echo.Context) error {
-
-}*/
+	todo, err := ctrl.store.Todo().GetByID(c.Request().Context(), todoID)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotAccessible) {
+			return c.JSON(http.StatusNotFound, model.ErrorResponse{
+				Error: "Todo not found",
+			})
+		}
+		return err
+	}
+	return c.JSON(http.StatusOK, todo)
+}

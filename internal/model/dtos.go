@@ -3,18 +3,24 @@ package model
 import "github.com/google/uuid"
 
 type (
-	// UserDTO : User Data Transfer Object
+	// UserDTO : User data transfer object
 	UserDTO struct {
 		ID       uuid.UUID `json:"id"`
 		Login    string    `json:"login"`
 		Password string    `json:"password"`
 	}
-	// TodoDTO : User Data Transfer Object
+	// TodoDTO : Todos data transfer object
 	TodoDTO struct {
 		ID          uuid.UUID `json:"id"`
 		Name        string    `json:"name"`
 		Description string    `json:"description"`
 		IsCompleted bool      `json:"is_completed"`
 		CreatedBy   uuid.UUID `json:"created_by"`
+	}
+	// GroupDTO : Group data transfer object
+	GroupDTO struct {
+		ID        uuid.UUID `json:"id"`
+		Name      string    `json:"name"`
+		CreatedBy uuid.UUID `json:"created_by"`
 	}
 )

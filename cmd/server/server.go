@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/todo-enjoers/backend_v1/internal/config"
 	"github.com/todo-enjoers/backend_v1/internal/controller"
@@ -26,6 +27,7 @@ func main() {
 		pool     *pgxpool.Pool
 		store    storage.Interface
 		cancel   context.CancelFunc
+		pgErr    *pgconn.PgError
 	)
 
 	ctx, cancel = signal.NotifyContext(
@@ -60,7 +62,7 @@ func main() {
 	}
 
 	//init storage
-	store, err = pgx.New(pool, log)
+	store, err = pgx.New(pool, log, pgErr)
 	if err != nil {
 		log.Fatal("Failed to create pgx storage", zap.Error(err))
 	}

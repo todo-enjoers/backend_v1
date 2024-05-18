@@ -25,7 +25,7 @@ const (
 
 CREATE INDEX IF NOT EXISTS todos_created_by_index ON todos(created_by);
 `
-	queryCreate = `INSERT INTO todos (id,name,description, created_by, project_id, "column" )VALUES ($1, $2, $3, $4, $5, $6)`
+	queryCreate = `INSERT INTO todos (id, name, description, created_by, project_id, "column" )VALUES ($1, $2, $3, $4, $5, $6)`
 )
 
 type todoStorage struct {

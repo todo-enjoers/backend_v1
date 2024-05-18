@@ -383,6 +383,7 @@ func (ctrl *Controller) HandleGetMyGroups(c echo.Context) error {
 	return nil
 }
 
+// ./api/todos
 func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 	var request model.TodoCreateRequest
 	user, err := ctrl.getUserIDFromRequest(c.Request())
@@ -391,7 +392,12 @@ func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 	}
 
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, echo.Map{"error": err.Error()})
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: controller.ErrBindingRequest.Error(),
+			},
+		)
 	}
 	todo := &model.TodoDTO{
 		ID:          uuid.New(),
@@ -401,8 +407,15 @@ func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 		CreatedBy:   user,
 	}
 
-	if err = ctrl.store.Todo().Create(c.Request().Context(), todo); err != nil {
-		return err
+	err = ctrl.store.Todo().Create(c.Request().Context(), todo)
+	if errors.Is(err, storage.ErrAlreadyExists) {
+		ctrl.log.Error("user already exists", zap.Error(err))
+		return c.JSON(
+			http.StatusConflict,
+			model.ErrorResponse{
+				Error: storage.ErrAlreadyExists.Error(),
+			},
+		)
 	}
 	ctrl.log.Info("successfully created todo", zap.Any("todo", todo))
 	return c.JSON(http.StatusCreated, todo)

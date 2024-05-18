@@ -408,6 +408,12 @@ func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 	return c.JSON(http.StatusCreated, todo)
 
 }
+func (ctrl *Controller) HandleGetTodos(c echo.Context) error {
+	user, err := ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		rows := ctrl.store.User().GetByID(c.Request())
+	}
+}
 
 /*func (ctrl *Controller) HandleGetTodosBtID(c echo.Context) error {
 

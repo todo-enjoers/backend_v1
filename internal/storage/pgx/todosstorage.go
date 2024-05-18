@@ -53,3 +53,7 @@ func (store *todoStorage) Create(ctx context.Context, todo *model.TodoDTO) error
 	_, err := store.pool.Exec(ctx, queryCreate, todo.CreatedBy, todo.Name, todo.ID, todo.Description)
 	return err
 }
+
+func (store *todoStorage) Get(ctx context.Context, id string) (*model.TodoDTO, error) {
+	return store, nil
+}

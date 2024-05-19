@@ -69,7 +69,7 @@ func (ctrl *Controller) configureRoutes() {
 			////	todos.GET("/", ctrl.HandleGetTodos)
 			todos.GET("/{id}", ctrl.HandleGetTodosById)
 			todos.POST("/", ctrl.HandleCreateTodo)
-			////	todos.PUT("/{id}", ctrl.HandleUpdateTodo)
+			todos.PUT("/{id}", ctrl.HandleUpdateTodo)
 			////	todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
 		}
 

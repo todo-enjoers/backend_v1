@@ -38,4 +38,5 @@ var (
 
 	// ErrComparingPasswords error
 	ErrComparingPasswords = errors.New("got error while comparing passwords")
+	ErrNotFound           = errors.New("not found")
 )

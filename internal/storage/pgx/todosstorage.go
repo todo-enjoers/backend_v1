@@ -31,6 +31,9 @@ CREATE INDEX IF NOT EXISTS todos_created_by_index ON todos(created_by);
 	queryTodoGetByID = `SELECT created_by, name, id, description FROM todos WHERE id = $1`
 	queryGetAllTodos = `SELECT t.id, t.name, t.description, t.is_completed, t.project_id
 FROM todos AS t ;`
+	queryUpdate = `UPDATE todos
+		SET name = $1, description = $2, is_completed = $3
+		WHERE id = $4 AND created_by = $5`
 )
 
 type todoStorage struct {
@@ -91,4 +94,8 @@ func (store *todoStorage) GetAll(ctx context.Context) ([]model.TodoDTO, error) {
 	}
 
 	return res, err
+}
+func (store *todoStorage) Update(ctx context.Context, todo *model.TodoDTO) error {
+	_, err := store.pool.Exec(ctx, queryUpdate, todo.Name, todo.Description, todo.IsCompleted, todo.ID, todo.CreatedBy)
+	return err
 }

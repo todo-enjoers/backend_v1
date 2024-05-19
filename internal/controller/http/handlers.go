@@ -427,7 +427,7 @@ func (ctrl *Controller) HandleGetTodosById(c echo.Context) error {
 	todoID, err := uuid.Parse(id)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error: "Invalid todo ID format",
+			Error: "Invalid todo ID",
 		})
 	}
 
@@ -440,5 +440,77 @@ func (ctrl *Controller) HandleGetTodosById(c echo.Context) error {
 		}
 		return err
 	}
+	return c.JSON(http.StatusOK, todo)
+}
+
+func (ctrl *Controller) HandleUpdateTodo(c echo.Context) error {
+	var request model.TodoUpdateRequest
+	todoIDStr := c.Param("id")
+	todoID, err := uuid.Parse(todoIDStr)
+	if err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: "invalid todo ID format",
+			},
+		)
+	}
+
+	user, err := ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		return err
+	}
+
+	if err := c.Bind(&request); err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: controller.ErrBindingRequest.Error(),
+			},
+		)
+	}
+
+	todo, err := ctrl.store.Todo().GetByID(c.Request().Context(), todoID)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return c.JSON(
+				http.StatusNotFound,
+				model.ErrorResponse{
+					Error: storage.ErrNotAccessible.Error(),
+				},
+			)
+		}
+		return c.JSON(
+			http.StatusInternalServerError,
+			model.ErrorResponse{
+				Error: err.Error(),
+			},
+		)
+	}
+
+	if todo.CreatedBy != user {
+		return c.JSON(
+			http.StatusForbidden,
+			model.ErrorResponse{
+				Error: "you do not have permission to update this todo",
+			},
+		)
+	}
+
+	todo.Name = request.Name
+	todo.Description = request.Description
+	todo.IsCompleted = request.IsCompleted
+
+	err = ctrl.store.Todo().Update(c.Request().Context(), todo)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			model.ErrorResponse{
+				Error: err.Error(),
+			},
+		)
+	}
+
+	ctrl.log.Info("successfully updated todo", zap.Any("todo", todo))
 	return c.JSON(http.StatusOK, todo)
 }

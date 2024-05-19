@@ -17,4 +17,9 @@ type (
 		IsCompleted bool      `json:"is_completed"`
 		CreatedBy   uuid.UUID `json:"created_by"`
 	}
+	TodoUpdateRequest struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		IsCompleted bool   `json:"is_completed"`
+	}
 )

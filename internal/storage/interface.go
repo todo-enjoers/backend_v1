@@ -17,10 +17,11 @@ type TodoStorage interface {
 	Create(ctx context.Context, todo *model.TodoDTO) error
 	GetByID(ctx context.Context, id uuid.UUID) (*model.TodoDTO, error)
 	GetAll(ctx context.Context) ([]model.TodoDTO, error)
+	Update(ctx context.Context, todo *model.TodoDTO) error
 	//GetByUserID(ctx context.Context, userID uuid.UUID) (*model.TodoDTO, error)
 	//ChangeTodos(ctx context.Context, todo *model.TodoDTO) error
 	//DeleteTodos(ctx context.Context, id uuid.UUID) error
-	//ChangeStatus(ctx context.Context, todo *model.TodoDTO) error
+
 }
 type Interface interface {
 	User() UserStorage

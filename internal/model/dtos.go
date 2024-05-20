@@ -17,4 +17,10 @@ type (
 		IsCompleted bool      `json:"is_completed"`
 		CreatedBy   uuid.UUID `json:"created_by"`
 	}
+	// GroupDTO : Group data transfer object
+	GroupDTO struct {
+		ID        uuid.UUID json:"id"
+		Name      string    json:"name"
+		CreatedBy uuid.UUID json:"created_by"
+	}
 )

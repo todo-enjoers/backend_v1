@@ -21,7 +21,15 @@ type TodoStorage interface {
 	//DeleteTodos(ctx context.Context, id uuid.UUID) error
 	//ChangeStatus(ctx context.Context, todo *model.TodoDTO) error
 }
+type GroupStorage interface {
+	Create(ctx context.Context, group *model.GroupDTO) error
+	GetByID(ctx context.Context, id uuid.UUID) (*model.GroupDTO, error)
+	CreateInvite(ctx context.Context) error
+	GetMyGroups(ctx context.Context, createdByID uuid.UUID) ([]model.GroupDTO, error)
+}
+
 type Interface interface {
 	User() UserStorage
 	Todo() TodoStorage
+	Group() GroupStorage
 }

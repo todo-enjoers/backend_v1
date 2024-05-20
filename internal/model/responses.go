@@ -31,4 +31,10 @@ type (
 	ErrorResponse struct {
 		Error string `json:"error"`
 	}
+	// GroupResponse : Group Response from server
+	GroupResponse struct {
+		ID        uuid.UUID json:"id"
+		Name      string    json:"name"
+		CreatedBy uuid.UUID json:"created_by"
+	}
 )

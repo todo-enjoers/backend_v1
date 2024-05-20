@@ -3,7 +3,6 @@ package http
 import (
 	"errors"
 	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
 	"github.com/todo-enjoers/backend_v1/internal/controller"
 	"github.com/todo-enjoers/backend_v1/internal/model"
 	"github.com/todo-enjoers/backend_v1/internal/storage"
@@ -412,3 +411,166 @@ func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 /*func (ctrl *Controller) HandleGetTodosBtID(c echo.Context) error {
 
 }*/
+// ./api/groups
+func (ctrl *Controller) HandleCreateGroup(c echo.Context) error {
+	var (
+		request   model.GroupDTO
+		createdBy uuid.UUID
+		err       error
+	)
+	// Binding request
+	if err = c.Bind(&request); err != nil {
+		ctrl.log.Error("error while binding request", zap.Error(err))
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: controller.ErrBindingRequest.Error(),
+			},
+		)
+	}
+
+	// Validate user with Token returning id
+	createdBy, err = ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+
+	ctrl.log.Info("HandleCreateGroup : got user", zap.String("created_by_user_id", createdBy.String()))
+
+	// Taking group from GroupDTO with new data
+	group := &model.GroupDTO{
+		ID:        uuid.New(),
+		Name:      request.Name,
+		CreatedBy: createdBy,
+	}
+	ctrl.log.Info("got group", zap.Any("group", group))
+
+	// Inserting in DB the group
+	err = ctrl.store.Group().Create(c.Request().Context(), group)
+	if err != nil {
+		if errors.Is(err, storage.ErrAlreadyExists) {
+			ctrl.log.Error("group already exists", zap.Error(err))
+			return c.JSON(
+				http.StatusConflict,
+				model.ErrorResponse{
+					Error: storage.ErrAlreadyExists.Error(),
+				},
+			)
+		}
+		ctrl.log.Error("got error while creating group", zap.Error(err))
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: storage.ErrCreateGroup.Error(),
+			},
+		)
+	}
+
+	response := model.GroupResponse{
+		ID:        group.ID,
+		Name:      group.Name,
+		CreatedBy: group.CreatedBy,
+	}
+
+	return c.JSON(http.StatusCreated, response)
+}
+
+func (ctrl *Controller) HandleGetGroupByID(c echo.Context) error {
+	var (
+		group         *model.GroupDTO
+		err           error
+		requestUserID uuid.UUID
+		requestID     uuid.UUID
+	)
+
+	// Binding requestID
+	if err = c.Bind(&requestID); err != nil {
+		ctrl.log.Error("error while binding request", zap.Error(err))
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: controller.ErrBindingRequest.Error(),
+			},
+		)
+	}
+
+	// Taking a UserID from request
+	requestUserID, err = ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+	// Todo: add this log example to all handlers
+	ctrl.log.Info("HandleGetGroup: got user id", zap.String("user_id", requestUserID.String()))
+
+	// Getting "Group" from DB
+	group, err = ctrl.store.Group().GetByID(c.Request().Context(), requestID)
+	if err != nil {
+		ctrl.log.Error("error while getting group by id from DB", zap.Error(err))
+		return c.JSON(
+			http.StatusNoContent,
+			model.ErrorResponse{
+				Error: storage.ErrGetByID.Error(),
+			},
+		)
+	}
+
+	response := &model.GroupResponse{
+		ID:        group.ID,
+		Name:      group.Name,
+		CreatedBy: group.CreatedBy,
+	}
+
+	return c.JSON(http.StatusOK, response)
+}
+
+func (ctrl *Controller) HandleCreateInvite(c echo.Context) error {
+	return nil
+}
+
+func (ctrl *Controller) HandleGetMyGroups(c echo.Context) error {
+	var (
+		listGroups []model.GroupDTO
+		err        error
+		UserID     uuid.UUID
+	)
+
+	// Taking a UserID from request
+	UserID, err = ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+	// Todo: add this log example to all handlers
+	ctrl.log.Info("HandleGetGroup: got user id", zap.String("user_id", UserID.String()))
+
+	// Getting list of "Groups" from DB
+	listGroups, err = ctrl.store.Group().GetMyGroups(c.Request().Context(), UserID)
+	if err != nil {
+		ctrl.log.Error("error while getting group by id from DB", zap.Error(err))
+		return c.JSON(
+			http.StatusNoContent,
+			model.ErrorResponse{
+				Error: storage.ErrGetByID.Error(),
+			},
+		)
+	}
+
+	return c.JSON(http.StatusOK, listGroups)
+}

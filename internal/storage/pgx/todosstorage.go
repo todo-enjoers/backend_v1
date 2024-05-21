@@ -33,7 +33,8 @@ CREATE INDEX IF NOT EXISTS todos_created_by_index ON todos(created_by);
 FROM todos AS t ;`
 	queryUpdate = `UPDATE todos
 		SET name = $1, description = $2, is_completed = $3
-		WHERE id = $4 AND created_by = $5`
+		WHERE id = $4 AND created_by = $5 and project_id = $6`
+	queryDelete = `DELETE FROM todos WHERE id = $1 and created_by = $2 and project_id = $3`
 )
 
 type todoStorage struct {
@@ -98,4 +99,17 @@ func (store *todoStorage) GetAll(ctx context.Context) ([]model.TodoDTO, error) {
 func (store *todoStorage) Update(ctx context.Context, todo *model.TodoDTO) error {
 	_, err := store.pool.Exec(ctx, queryUpdate, todo.Name, todo.Description, todo.IsCompleted, todo.ID, todo.CreatedBy)
 	return err
+}
+func (store *todoStorage) Delete(ctx context.Context, id uuid.UUID, createdBy uuid.UUID) error {
+
+	commandTag, err := store.pool.Exec(ctx, queryDelete, id, createdBy)
+	if err != nil {
+		return err
+	}
+
+	if commandTag.RowsAffected() == 0 {
+		return storage.ErrNotFound
+	}
+
+	return nil
 }

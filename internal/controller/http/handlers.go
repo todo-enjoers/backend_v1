@@ -514,3 +514,42 @@ func (ctrl *Controller) HandleUpdateTodo(c echo.Context) error {
 	ctrl.log.Info("successfully updated todo", zap.Any("todo", todo))
 	return c.JSON(http.StatusOK, todo)
 }
+
+func (ctrl *Controller) HandleDeleteTodo(c echo.Context) error {
+	todoIDStr := c.Param("id")
+	todoID, err := uuid.Parse(todoIDStr)
+	if err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: "invalid todo ID format",
+			},
+		)
+	}
+
+	user, err := ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		return err
+	}
+
+	err = ctrl.store.Todo().Delete(c.Request().Context(), todoID, user)
+	if err != nil {
+		if err == storage.ErrNotFound {
+			return c.JSON(
+				http.StatusNotFound,
+				model.ErrorResponse{
+					Error: "todo not found",
+				},
+			)
+		}
+		return c.JSON(
+			http.StatusInternalServerError,
+			model.ErrorResponse{
+				Error: err.Error(),
+			},
+		)
+	}
+
+	ctrl.log.Info("successfully deleted todo", zap.String("id", todoID.String()))
+	return c.NoContent(http.StatusNoContent)
+}

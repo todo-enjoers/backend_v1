@@ -25,14 +25,21 @@ type TodoStorage interface {
 }
 
 type GroupStorage interface {
-	Create(ctx context.Context, group *model.GroupDTO) error
-	GetByID(ctx context.Context, id uuid.UUID) (*model.GroupDTO, error)
-	CreateInvite(ctx context.Context) error
-	GetMyGroups(ctx context.Context, createdByID uuid.UUID) ([]model.GroupDTO, error)
+	CreateGroup(ctx context.Context, group *model.GroupDTO) error
+	GetUsersInProjectByProjectID(ctx context.Context, projectID uuid.UUID) ([]model.GroupDTO, error)
+	DeleteFromGroup(ctx context.Context, group *model.GroupDTO) error
+}
+
+type ProjectStorage interface {
+	CreateProjects(ctx context.Context, project *model.ProjectsDTO) error
+	GetByID(ctx context.Context, id uuid.UUID) (*model.ProjectsDTO, error)
+	GetMyProjects(ctx context.Context, createdByID uuid.UUID) ([]model.ProjectsDTO, error)
+	UpdateName(ctx context.Context, name string, id uuid.UUID) error
 }
 
 type Interface interface {
 	User() UserStorage
 	Todo() TodoStorage
 	Group() GroupStorage
+	Project() ProjectStorage
 }

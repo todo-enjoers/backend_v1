@@ -367,12 +367,12 @@ func (ctrl *Controller) HandleRefreshToken(c echo.Context) error {
 }
 
 // ./api/groups
-func (ctrl *Controller) HandleCreateGroup(c echo.Context) error {
+func (ctrl *Controller) HandleCreateInvite(c echo.Context) error {
 	var (
-		request   model.GroupDTO
-		createdBy uuid.UUID
-		err       error
+		request model.GroupRequest
+		err     error
 	)
+
 	// Binding request
 	if err = c.Bind(&request); err != nil {
 		ctrl.log.Error("error while binding request", zap.Error(err))
@@ -385,7 +385,7 @@ func (ctrl *Controller) HandleCreateGroup(c echo.Context) error {
 	}
 
 	// Validate user with Token returning id
-	createdBy, err = ctrl.getUserIDFromRequest(c.Request())
+	requestUserID, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(
@@ -396,21 +396,20 @@ func (ctrl *Controller) HandleCreateGroup(c echo.Context) error {
 		)
 	}
 
-	ctrl.log.Info("HandleCreateGroup : got user", zap.String("created_by_user_id", createdBy.String()))
+	ctrl.log.Info("HandleAddInGroup : got user invitor", zap.String("added_by_user_id", requestUserID.String()))
 
 	// Taking group from GroupDTO with new data
-	group := &model.GroupDTO{
-		ID:        uuid.New(),
-		Name:      request.Name,
-		CreatedBy: createdBy,
+	user := &model.GroupDTO{
+		UserID:    requestUserID,
+		ProjectID: request.ProjectID,
 	}
-	ctrl.log.Info("got group", zap.Any("group", group))
+	ctrl.log.Info("got user", zap.Any("user", user))
 
 	// Inserting in DB the group
-	err = ctrl.store.Group().Create(c.Request().Context(), group)
+	err = ctrl.store.Group().CreateGroup(c.Request().Context(), user)
 	if err != nil {
 		if errors.Is(err, storage.ErrAlreadyExists) {
-			ctrl.log.Error("group already exists", zap.Error(err))
+			ctrl.log.Error("user already in group", zap.Error(err))
 			return c.JSON(
 				http.StatusConflict,
 				model.ErrorResponse{
@@ -418,7 +417,7 @@ func (ctrl *Controller) HandleCreateGroup(c echo.Context) error {
 				},
 			)
 		}
-		ctrl.log.Error("got error while creating group", zap.Error(err))
+		ctrl.log.Error("got error while adding in group", zap.Error(err))
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
@@ -428,9 +427,8 @@ func (ctrl *Controller) HandleCreateGroup(c echo.Context) error {
 	}
 
 	response := model.GroupResponse{
-		ID:        group.ID,
-		Name:      group.Name,
-		CreatedBy: group.CreatedBy,
+		UserID:    user.UserID,
+		ProjectID: user.ProjectID,
 	}
 
 	return c.JSON(http.StatusCreated, response)
@@ -438,22 +436,10 @@ func (ctrl *Controller) HandleCreateGroup(c echo.Context) error {
 
 func (ctrl *Controller) HandleGetGroupByID(c echo.Context) error {
 	var (
-		group         *model.GroupDTO
+		group         []model.GroupDTO
 		err           error
 		requestUserID uuid.UUID
-		requestID     uuid.UUID
 	)
-
-	// Binding requestID
-	if err = c.Bind(&requestID); err != nil {
-		ctrl.log.Error("error while binding request", zap.Error(err))
-		return c.JSON(
-			http.StatusBadRequest,
-			model.ErrorResponse{
-				Error: controller.ErrBindingRequest.Error(),
-			},
-		)
-	}
 
 	// Taking a UserID from request
 	requestUserID, err = ctrl.getUserIDFromRequest(c.Request())
@@ -470,7 +456,7 @@ func (ctrl *Controller) HandleGetGroupByID(c echo.Context) error {
 	ctrl.log.Info("HandleGetGroup: got user id", zap.String("user_id", requestUserID.String()))
 
 	// Getting "Group" from DB
-	group, err = ctrl.store.Group().GetByID(c.Request().Context(), requestID)
+	group, err = ctrl.store.Group().GetUsersInProjectByProjectID(c.Request().Context())
 	if err != nil {
 		ctrl.log.Error("error while getting group by id from DB", zap.Error(err))
 		return c.JSON(
@@ -490,9 +476,9 @@ func (ctrl *Controller) HandleGetGroupByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func (ctrl *Controller) HandleCreateInvite(c echo.Context) error {
-	return nil
-}
+//func (ctrl *Controller) HandleCreateInvite(c echo.Context) error {
+//	url := fmt.Sprintf("?user_id=%s&project_id=%s")
+//}
 
 func (ctrl *Controller) HandleGetMyGroups(c echo.Context) error {
 	var (
@@ -542,6 +528,8 @@ func (ctrl *Controller) HandleGetMyGroups(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, listGroups)
 }
+
+// ./api/projects
 
 // ./api/todos
 func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {

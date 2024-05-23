@@ -75,12 +75,18 @@ func (ctrl *Controller) configureRoutes() {
 
 		groups := api.Group("/groups")
 		{
-			groups.POST("/", ctrl.HandleCreateGroup)
-			groups.GET("/{id}", ctrl.HandleGetGroupByID)
-			groups.POST("/create_invite", ctrl.HandleCreateInvite)
-			groups.GET("/me/groups", ctrl.HandleGetMyGroups)
+			group.POST("/invite/{user_id}{project_id}", ctrl.HandleCreateInvite)
+			group.GET("/me/groups", ctrl.HandleGetMyGroups)
 		}
-		/*columns := api.Group("/columns")
+
+		projects := api.Group("/projects")
+		{
+			projects.POST("/create", ctrl.HandleCreateProject)
+			projects.GET("/{id}", ctrl.HandleGetGroupByID)
+			projects.POST("/invite/{user_id}{project_id}", ctrl.HandleCreateInvite) // не так
+			projects.GET("/me/projects", ctrl.HandleGetMyGroups)
+		}
+		columns := api.Group("/columns")
 		{
 			columns.POST("/", ctrl.HandleCreateColumn)
 			columns.DELETE("/{id}", ctrl.HandleDeleteColumn)

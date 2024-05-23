@@ -17,9 +17,8 @@ type (
 	}
 	// GroupResponse : Group Response from server
 	GroupResponse struct {
-		ID        uuid.UUID `json:"id"`
-		Name      string    `json:"name"`
-		CreatedBy uuid.UUID `json:"created_by"`
+		UserID    uuid.UUID `json:"user_id"`
+		ProjectID uuid.UUID `json:"project_id"`
 	}
 	// UserCoupleTokensResponse : Response of generation a couple of tokens
 	UserCoupleTokensResponse struct {

@@ -11,11 +11,13 @@ import (
 var _ storage.Interface = (*Storage)(nil)
 
 type Storage struct {
-	pool  *pgxpool.Pool
-	log   *zap.Logger
-	user  *userStorage
-	group *groupStorage
-	pgErr *pgconn.PgError
+	pool    *pgxpool.Pool
+	log     *zap.Logger
+	user    *userStorage
+	group   *groupStorage
+	project *projectsStorage
+	todo    *todoStorage
+	pgErr   *pgconn.PgError
 }
 
 func New(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError) (*Storage, error) {
@@ -29,11 +31,23 @@ func New(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError) (*Storage, 
 		return nil, err
 	}
 
+	projects, err := newProjectsStorage(pool, log, pgErr)
+	if err != nil {
+		return nil, err
+	}
+
+	todos, err := newTodoStorage(pool, log, pgErr)
+	if err != nil {
+		return nil, err
+	}
+
 	store := &Storage{
-		pool:  pool,
-		log:   log,
-		user:  users,
-		group: groups,
+		pool:    pool,
+		log:     log,
+		user:    users,
+		group:   groups,
+		project: projects,
+		todo:    todos,
 	}
 
 	return store, nil
@@ -45,4 +59,12 @@ func (s *Storage) User() storage.UserStorage {
 
 func (s *Storage) Group() storage.GroupStorage {
 	return s.group
+}
+
+func (s *Storage) Todo() storage.TodoStorage {
+	return s.todo
+}
+
+func (s *Storage) Project() storage.ProjectStorage {
+	return s.project
 }

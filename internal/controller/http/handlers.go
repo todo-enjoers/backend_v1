@@ -546,11 +546,6 @@ func (ctrl *Controller) HandleGetMyGroups(c echo.Context) error {
 // ./api/todos
 func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 	var request model.TodoCreateRequest
-	user, err := ctrl.getUserIDFromRequest(c.Request())
-	if err != nil {
-		return err
-	}
-
 	if err := c.Bind(&request); err != nil {
 		return c.JSON(
 			http.StatusBadRequest,
@@ -559,15 +554,28 @@ func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 			},
 		)
 	}
+	userId, err := ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+
 	todo := &model.TodoDTO{
 		ID:          uuid.New(),
 		Name:        request.Name,
 		Description: request.Description,
-		IsCompleted: false,
-		CreatedBy:   user,
+		IsCompleted: request.IsCompleted,
+		ProjectID:   request.ProjectID,
+		CreatedBy:   userId,
+		Column:      request.Column,
 	}
 
-	err = ctrl.store.Todo().Create(c.Request().Context(), todo)
+	err = ctrl.store.Todo().Create(c.Request().Context(), todo, userId, todo.ProjectID, todo.Column)
 	if errors.Is(err, storage.ErrAlreadyExists) {
 		ctrl.log.Error("user already exists", zap.Error(err))
 		return c.JSON(
@@ -577,7 +585,16 @@ func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 			},
 		)
 	}
-	ctrl.log.Info("successfully created todo", zap.Any("todo", todo))
+	response := model.TodoCreateResponse{
+		ID:          todo.ID,
+		Name:        todo.Name,
+		Description: todo.Description,
+		IsCompleted: todo.IsCompleted,
+		ProjectID:   todo.ProjectID,
+		CreatedBy:   todo.CreatedBy,
+		Column:      todo.Column,
+	}
+	ctrl.log.Info("successfully created new todo", zap.Any("todo", response))
 	return c.JSON(http.StatusCreated, todo)
 
 }
@@ -587,15 +604,25 @@ func (ctrl *Controller) HandleGetTodosById(c echo.Context) error {
 	todoID, err := uuid.Parse(id)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error: "Invalid todo ID",
+			Error: storage.ErrBadRequestId.Error(),
 		})
+	}
+	_, err = ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
 	}
 
 	todo, err := ctrl.store.Todo().GetByID(c.Request().Context(), todoID)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotAccessible) {
 			return c.JSON(http.StatusNotFound, model.ErrorResponse{
-				Error: "Todo not found",
+				Error: storage.ErrNotFound.Error(),
 			})
 		}
 		return err
@@ -603,70 +630,80 @@ func (ctrl *Controller) HandleGetTodosById(c echo.Context) error {
 	return c.JSON(http.StatusOK, todo)
 }
 
-func (ctrl *Controller) HandleUpdateTodo(c echo.Context) error {
+func (ctrl *Controller) HandleChangeTodo(c echo.Context) error {
 	var request model.TodoUpdateRequest
+
+	// get user id
+	user, err := ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: "Unauthorized",
+			},
+		)
+	}
+
+	// parse id
 	todoIDStr := c.Param("id")
 	todoID, err := uuid.Parse(todoIDStr)
 	if err != nil {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: "invalid todo ID format",
+				Error: storage.ErrBadRequestId.Error(),
 			},
 		)
 	}
-
-	user, err := ctrl.getUserIDFromRequest(c.Request())
-	if err != nil {
-		return err
-	}
-
+	//get request
 	if err := c.Bind(&request); err != nil {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: controller.ErrBindingRequest.Error(),
+				Error: storage.ErrBadRequestId.Error(),
 			},
 		)
 	}
 
+	// get user by id
 	todo, err := ctrl.store.Todo().GetByID(c.Request().Context(), todoID)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			return c.JSON(
 				http.StatusNotFound,
 				model.ErrorResponse{
-					Error: storage.ErrNotAccessible.Error(),
+					Error: storage.ErrNotFound.Error(),
 				},
 			)
 		}
 		return c.JSON(
 			http.StatusInternalServerError,
 			model.ErrorResponse{
-				Error: err.Error(),
+				Error: storage.ErrInternalServer.Error(),
 			},
 		)
 	}
-
+	//checking
 	if todo.CreatedBy != user {
 		return c.JSON(
 			http.StatusForbidden,
 			model.ErrorResponse{
-				Error: "you do not have permission to update this todo",
+				Error: storage.ErrForbidden.Error(),
 			},
 		)
 	}
-
+	//change todos
 	todo.Name = request.Name
 	todo.Description = request.Description
 	todo.IsCompleted = request.IsCompleted
 
-	err = ctrl.store.Todo().Update(c.Request().Context(), todo)
+	//work with db
+	err = ctrl.store.Todo().Update(c.Request().Context(), todo, user)
 	if err != nil {
 		return c.JSON(
 			http.StatusInternalServerError,
 			model.ErrorResponse{
-				Error: err.Error(),
+				Error: storage.ErrInternalServer.Error(),
 			},
 		)
 	}
@@ -682,23 +719,29 @@ func (ctrl *Controller) HandleDeleteTodo(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: "invalid todo ID format",
+				Error: storage.ErrBadRequestId.Error(),
 			},
 		)
 	}
 
-	user, err := ctrl.getUserIDFromRequest(c.Request())
+	_, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		return err
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
 	}
 
-	err = ctrl.store.Todo().DeleteTodos(c.Request().Context(), todoID, user)
+	err = ctrl.store.Todo().DeleteTodos(c.Request().Context(), todoID)
 	if err != nil {
-		if err == storage.ErrNotFound {
+		if errors.Is(err, storage.ErrNotFound) {
 			return c.JSON(
 				http.StatusNotFound,
 				model.ErrorResponse{
-					Error: "todo not found",
+					Error: storage.ErrNotFound.Error(),
 				},
 			)
 		}
@@ -713,3 +756,55 @@ func (ctrl *Controller) HandleDeleteTodo(c echo.Context) error {
 	ctrl.log.Info("successfully deleted todo", zap.String("id", todoID.String()))
 	return c.NoContent(http.StatusNoContent)
 }
+
+func (ctrl *Controller) HandleGetAllTodos(c echo.Context) error {
+	var (
+		listTodos []model.TodoDTO
+		err       error
+		UserID    uuid.UUID
+		Columns   string
+	)
+
+	// Taking a UserID from request
+	UserID, err = ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+	ctrl.log.Info("HandleGetAll: logged in", zap.String("user_id", UserID.String()))
+
+	// Taking a UserID from request
+	UserID, err = ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+	// Todo: add this log example to all handlers
+	ctrl.log.Info("HandleGetAllTodos: got user id", zap.String("user_id", UserID.String()))
+
+	// Getting list of "Groups" from DB
+	listTodos, err = ctrl.store.Todo().GetAll(c.Request().Context(), UserID)
+	if err != nil {
+		ctrl.log.Error("error while getting todos by id from DB", zap.Error(err))
+		return c.JSON(
+			http.StatusNoContent,
+			model.ErrorResponse{
+				Error: storage.ErrGetByID.Error(),
+			},
+		)
+	}
+
+	return c.JSON(http.StatusOK, listTodos)
+}
+
+// ./api/columns

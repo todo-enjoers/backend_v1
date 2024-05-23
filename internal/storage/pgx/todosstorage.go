@@ -2,9 +2,9 @@ package pgx
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5/pgconn"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/todo-enjoers/backend_v1/internal/model"
 	"github.com/todo-enjoers/backend_v1/internal/storage"
@@ -28,14 +28,15 @@ const (
 
 CREATE INDEX IF NOT EXISTS todos_created_by_index ON todos(created_by);
 `
-	queryCreate      = `INSERT INTO todos (id, name, description, created_by, project_id, "column" )VALUES ($1, $2, $3, $4, $5, $6)`
+	queryCreate      = `INSERT INTO todos (id, name, is_completed, description, created_by, project_id, "column" )VALUES ($1, $2, $3, $4, $5, $6, $7)`
 	queryTodoGetByID = `SELECT created_by, name, id, description FROM todos WHERE id = $1`
-	queryGetAllTodos = `SELECT t.id, t.name, t.description, t.is_completed, t.project_id
-FROM todos AS t ;`
+	queryGetAllTodos = `SELECT name, id, description, is_completed 
+		FROM todos 
+		WHERE created_by = $1 AND "column" = $2;`
 	queryUpdate = `UPDATE todos
 		SET name = $1, description = $2, is_completed = $3
-		WHERE id = $4 AND created_by = $5 and project_id = $6`
-	queryDelete = `DELETE FROM todos WHERE id = $1 and created_by = $2 and project_id = $3`
+		WHERE id = $4`
+	queryDelete = `DELETE FROM todos WHERE id = $1`
 )
 
 type todoStorage struct {
@@ -61,32 +62,32 @@ func (store *todoStorage) migrateT() error {
 	return err
 }
 
-func (store *todoStorage) Create(ctx context.Context, todo *model.TodoDTO) error {
-	_, err := store.pool.Exec(ctx, queryCreate, todo.CreatedBy, todo.Name, todo.ID, todo.Description)
+func (store *todoStorage) Create(ctx context.Context, todo *model.TodoDTO, createdBy uuid.UUID, projectBy uuid.UUID, column string) error {
+	_, err := store.pool.Exec(ctx, queryCreate, todo.ID, todo.Name, todo.Description, todo.IsCompleted, todo.ProjectID, todo.CreatedBy, todo.Column, createdBy, projectBy, column)
 	return err
 }
 
 func (store *todoStorage) GetByID(ctx context.Context, id uuid.UUID) (*model.TodoDTO, error) {
 	var todo model.TodoDTO
-	err := store.pool.QueryRow(ctx, queryTodoGetByID, id).Scan(&todo.CreatedBy, &todo.Name, &todo.ID, &todo.Description)
+	err := store.pool.QueryRow(ctx, queryTodoGetByID, id).Scan(&todo.ID, &todo.Name, &todo.Description, &todo.IsCompleted, &todo.CreatedBy, &todo.ProjectID, &todo.Column)
 	if err != nil {
 		return nil, err
 	}
 	return &todo, nil
 }
 
-func (store *todoStorage) GetAll(ctx context.Context) ([]model.TodoDTO, error) {
+func (store *todoStorage) GetAll(ctx context.Context, createdBy uuid.UUID, column uuid.UUID) ([]model.TodoDTO, error) {
 	var res []model.TodoDTO
-	rows, err := store.pool.Query(ctx, queryGetAllTodos)
+
+	rows, err := store.pool.Query(ctx, queryGetAllTodos, createdBy, column)
 	if err != nil {
 		return nil, fmt.Errorf("error while querying all todos: %w", err)
 	}
-
 	defer rows.Close()
 
 	for rows.Next() {
 		var temp model.TodoDTO
-		err = rows.Scan(&temp.IsCompleted, &temp.Name, &temp.ID, &temp.Description)
+		err = rows.Scan(&temp.Name, &temp.ID, &temp.Description, &temp.IsCompleted)
 		if err != nil {
 			return nil, fmt.Errorf("error while scanning todos: %w", err)
 		}
@@ -94,18 +95,20 @@ func (store *todoStorage) GetAll(ctx context.Context) ([]model.TodoDTO, error) {
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("unwrapped error: %w", err)
+		return nil, fmt.Errorf("rows iteration error: %w", err)
 	}
 
-	return res, err
+	return res, nil
 }
-func (store *todoStorage) Update(ctx context.Context, todo *model.TodoDTO) error {
-	_, err := store.pool.Exec(ctx, queryUpdate, todo.Name, todo.Description, todo.IsCompleted, todo.ID, todo.CreatedBy)
+
+func (store *todoStorage) Update(ctx context.Context, todo *model.TodoDTO, id uuid.UUID) error {
+	_, err := store.pool.Exec(ctx, queryUpdate, todo.Name, todo.Description, todo.IsCompleted, id)
 	return err
 }
-func (store *todoStorage) Delete(ctx context.Context, id uuid.UUID, createdBy uuid.UUID) error {
 
-	commandTag, err := store.pool.Exec(ctx, queryDelete, id, createdBy)
+func (store *todoStorage) DeleteTodos(ctx context.Context, id uuid.UUID) error {
+
+	commandTag, err := store.pool.Exec(ctx, queryDelete, id)
 	if err != nil {
 		return err
 	}

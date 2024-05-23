@@ -15,11 +15,13 @@ type UserStorage interface {
 }
 
 type TodoStorage interface {
-	Create(ctx context.Context, todo *model.TodoDTO) error
+	Create(ctx context.Context, todo *model.TodoDTO, createdBy uuid.UUID, projectBy uuid.UUID, column string) error
 	GetByID(ctx context.Context, id uuid.UUID) (*model.TodoDTO, error)
-	GetAll(ctx context.Context) ([]model.TodoDTO, error)
-	Update(ctx context.Context, todo *model.TodoDTO) error
-	DeleteTodos(ctx context.Context, id uuid.UUID, createdBy uuid.UUID) error
+	GetAll(ctx context.Context, createdBy uuid.UUID, column uuid.UUID) ([]model.TodoDTO, error)
+	Update(ctx context.Context, todo *model.TodoDTO, id uuid.UUID) error
+	DeleteTodos(ctx context.Context, id uuid.UUID) error
+	//CreateColumns()
+	//
 }
 
 type GroupStorage interface {

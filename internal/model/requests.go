@@ -31,8 +31,18 @@ type (
 	}
 	// TodoCreateRequest :Creation TodoType Request from user
 	TodoCreateRequest struct {
+		ID          uuid.UUID `json:"id"`
+		Name        string    `json:"name"`
+		Description string    `json:"description"`
+		IsCompleted bool      `json:"is_completed"`
+		CreatedBy   uuid.UUID `json:"created_by"`
+		ProjectID   uuid.UUID `json:"project_id"`
+		Column      string    `json:"column"`
+	}
+	TodoUpdateRequest struct {
 		Name        string `json:"name"`
 		Description string `json:"description"`
+		IsCompleted bool   `json:"is_completed"`
 	}
 )
 

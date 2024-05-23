@@ -41,8 +41,19 @@ var (
 
 	// ErrComparingPasswords error
 	ErrComparingPasswords = errors.New("got error while comparing passwords")
-	ErrNotFound           = errors.New("not found")
+
+	// ErrNotFound error
+	ErrNotFound = errors.New("not found")
 
 	// ErrInserting error
 	ErrInserting = errors.New("got error while inserting in database")
+
+	//ErrBadRequestId error
+	ErrBadRequestId = errors.New("got error while validating id")
+
+	//ErrForbidden error
+	ErrForbidden = errors.New("forbidden")
+
+	//ErrInternalServer error
+	ErrInternalServer = errors.New("failed to retrieve todo")
 )

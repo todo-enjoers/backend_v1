@@ -66,10 +66,10 @@ func (ctrl *Controller) configureRoutes() {
 
 		todos := api.Group("/todos")
 		{
-			todos.GET("/", ctrl.HandleGetTodos)
+			todos.GET("/", ctrl.HandleGetAllTodos)
 			todos.GET("/{id}", ctrl.HandleGetTodosById)
 			todos.POST("/", ctrl.HandleCreateTodo)
-			todos.PUT("/{id}", ctrl.HandleUpdateTodo)
+			todos.PUT("/{id}", ctrl.HandleChangeTodo)
 			todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
 		}
 
@@ -80,12 +80,14 @@ func (ctrl *Controller) configureRoutes() {
 			groups.POST("/create_invite", ctrl.HandleCreateInvite)
 			groups.GET("/me/groups", ctrl.HandleGetMyGroups)
 		}
-		columns := api.Group("/columns")
+		/*columns := api.Group("/columns")
 		{
 			columns.POST("/", ctrl.HandleCreateColumn)
 			columns.DELETE("/{id}", ctrl.HandleDeleteColumn)
-			columns.PUT("/")
-		}
+			columns.PUT("/{id}", ctrl.HandleUpdateColumn)
+			columns.GET("/{id}", ctrl.HandleGetColumnById)
+			columns.GET("/{if}", ctrl.HandleGetAllColumn)
+		}*/
 	}
 }
 

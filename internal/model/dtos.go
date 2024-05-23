@@ -14,8 +14,10 @@ type (
 		ID          uuid.UUID `json:"id"`
 		Name        string    `json:"name"`
 		Description string    `json:"description"`
-		IsCompleted bool      `json:"is_completed"`
+		IsCompleted bool      `json:"is_complete"`
+		ProjectID   uuid.UUID `json:"project_id"`
 		CreatedBy   uuid.UUID `json:"created_by"`
+		Column      string    `json:"column"`
 	}
 	// GroupDTO : Group data transfer object
 	GroupDTO struct {
@@ -23,9 +25,11 @@ type (
 		Name      string    `json:"name"`
 		CreatedBy uuid.UUID `json:"created_by"`
 	}
-	TodoUpdateRequest struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		IsCompleted bool   `json:"is_completed"`
+
+	//ColumnDTO : Column data transfer object
+	ColumDTO struct {
+		ProjectId uuid.UUID `json:"id"`
+		Name      string    `json:"name"`
+		Order     int       `json:"order"`
 	}
 )

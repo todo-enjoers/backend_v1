@@ -19,10 +19,7 @@ type TodoStorage interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*model.TodoDTO, error)
 	GetAll(ctx context.Context) ([]model.TodoDTO, error)
 	Update(ctx context.Context, todo *model.TodoDTO) error
-	//GetByUserID(ctx context.Context, userID uuid.UUID) (*model.TodoDTO, error)
-	//ChangeTodos(ctx context.Context, todo *model.TodoDTO) error
-	//DeleteTodos(ctx context.Context, id uuid.UUID) error
-
+	DeleteTodos(ctx context.Context, id uuid.UUID) error
 }
 
 type GroupStorage interface {

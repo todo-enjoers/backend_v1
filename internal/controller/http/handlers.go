@@ -692,7 +692,7 @@ func (ctrl *Controller) HandleDeleteTodo(c echo.Context) error {
 		return err
 	}
 
-	err = ctrl.store.Todo().Delete(c.Request().Context(), todoID, user)
+	err = ctrl.store.Todo().DeleteTodos(c.Request().Context(), todoID, user)
 	if err != nil {
 		if err == storage.ErrNotFound {
 			return c.JSON(

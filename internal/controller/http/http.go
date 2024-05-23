@@ -73,7 +73,7 @@ func (ctrl *Controller) configureRoutes() {
 			////	todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
 		}
 
-		group := api.Group("/groups")
+		groups := api.Group("/groups")
 		{
 			group.POST("/invite/{user_id}{project_id}", ctrl.HandleCreateInvite)
 			group.GET("/me/groups", ctrl.HandleGetMyGroups)
@@ -85,6 +85,12 @@ func (ctrl *Controller) configureRoutes() {
 			projects.GET("/{id}", ctrl.HandleGetGroupByID)
 			projects.POST("/invite/{user_id}{project_id}", ctrl.HandleCreateInvite) // не так
 			projects.GET("/me/projects", ctrl.HandleGetMyGroups)
+		}
+		columns := api.Group("/columns")
+		{
+			columns.POST("/", ctrl.HandleCreateColumn)
+			columns.DELETE("/{id}", ctrl.HandleDeleteColumn)
+			columns.PUT("/")
 		}
 	}
 }

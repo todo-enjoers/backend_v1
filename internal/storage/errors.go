@@ -41,6 +41,7 @@ var (
 
 	// ErrComparingPasswords error
 	ErrComparingPasswords = errors.New("got error while comparing passwords")
+	ErrNotFound           = errors.New("not found")
 
 	// ErrInserting error
 	ErrInserting = errors.New("got error while inserting in database")

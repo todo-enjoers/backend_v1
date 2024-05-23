@@ -73,13 +73,13 @@ func (ctrl *Controller) configureRoutes() {
 			todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
 		}
 
-		//groups := api.Group("/groups")
-		//{
-		//	groups.POST("/", ctrl.HandleCreateGroup)
-		//	groups.GET("/{id}", ctrl.HandleGetGroup)
-		//	groups.POST("/create_invite", ctrl.HandleCreateInvite)
-		//	groups.GET("/me/groups", ctrl.HandleGetMyGroups)
-		//}
+		groups := api.Group("/groups")
+		{
+			groups.POST("/", ctrl.HandleCreateGroup)
+			groups.GET("/{id}", ctrl.HandleGetGroupByID)
+			groups.POST("/create_invite", ctrl.HandleCreateInvite)
+			groups.GET("/me/groups", ctrl.HandleGetMyGroups)
+		}
 	}
 }
 

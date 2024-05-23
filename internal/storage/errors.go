@@ -24,6 +24,9 @@ var (
 	// ErrCreateUser error
 	ErrCreateUser = errors.New("got error while creating user")
 
+	// ErrCreateGroup error
+	ErrCreateGroup = errors.New("got error while creating group")
+
 	// ErrCreateToken error
 	ErrCreateToken = errors.New("got error while creating token")
 
@@ -39,4 +42,7 @@ var (
 	// ErrComparingPasswords error
 	ErrComparingPasswords = errors.New("got error while comparing passwords")
 	ErrNotFound           = errors.New("not found")
+
+	// ErrInserting error
+	ErrInserting = errors.New("got error while inserting in database")
 )

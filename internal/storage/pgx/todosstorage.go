@@ -2,6 +2,7 @@ package pgx
 
 import (
 	"context"
+	"github.com/jackc/pgx/v5/pgconn"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -38,14 +39,16 @@ FROM todos AS t ;`
 )
 
 type todoStorage struct {
-	pool *pgxpool.Pool
-	log  *zap.Logger
+	pool  *pgxpool.Pool
+	log   *zap.Logger
+	pgErr *pgconn.PgError
 }
 
-func newTodoStorage(pool *pgxpool.Pool, log *zap.Logger) (*todoStorage, error) {
+func newTodoStorage(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError) (*todoStorage, error) {
 	store := &todoStorage{
-		pool: pool,
-		log:  log,
+		pool:  pool,
+		log:   log,
+		pgErr: pgErr,
 	}
 	if err := store.migrateT(); err != nil {
 		return nil, err

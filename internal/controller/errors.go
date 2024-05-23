@@ -6,22 +6,22 @@ import (
 
 var (
 	// Unauthenticated error
-	Unauthenticated = errors.New("unauthenticated")
+	//Unauthenticated = errors.New("unauthenticated")
 
 	// Internal error
-	Internal = errors.New("internal")
+	//Internal = errors.New("internal")
 
 	// NotFound error
-	NotFound = errors.New("not found")
+	//NotFound = errors.New("not found")
 
 	// BadRequest error
-	BadRequest = errors.New("bad request")
+	//BadRequest = errors.New("bad request")
 
 	// Canceled error
-	Canceled = errors.New("canceled")
+	//Canceled = errors.New("canceled")
 
 	// PermissionDenied error
-	PermissionDenied = errors.New("permission denied")
+	//PermissionDenied = errors.New("permission denied")
 
 	// InvalidPassword error
 	InvalidPassword = errors.New("invalid password")

@@ -15,7 +15,6 @@ import (
 
 // Checking whether the interface "TodoStorage" implements the structure "todoStorage"
 var _ storage.UserStorage = (*userStorage)(nil)
-var pgErr *pgconn.PgError
 
 // Users Query const
 const (
@@ -44,14 +43,16 @@ FROM users AS u;`
 )
 
 type userStorage struct {
-	pool *pgxpool.Pool
-	log  *zap.Logger
+	pool  *pgxpool.Pool
+	log   *zap.Logger
+	pgErr *pgconn.PgError
 }
 
-func newUserStorage(pool *pgxpool.Pool, log *zap.Logger) (*userStorage, error) {
+func newUserStorage(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError) (*userStorage, error) {
 	store := &userStorage{
-		pool: pool,
-		log:  log,
+		pool:  pool,
+		log:   log,
+		pgErr: pgErr,
 	}
 	if err := store.migrate(); err != nil {
 		return nil, err
@@ -67,10 +68,10 @@ func (store *userStorage) migrate() error {
 func (store *userStorage) Create(ctx context.Context, user *model.UserDTO) error {
 	_, err := store.pool.Exec(ctx, queryInsertInto, user.ID, user.Login, user.Password)
 	if err != nil {
-		if errors.As(err, &pgErr) && pgerrcode.UniqueViolation == pgErr.Code {
-			return storage.ErrAlreadyClosed
+		if errors.As(err, &store.pgErr) && pgerrcode.UniqueViolation == store.pgErr.Code {
+			return storage.ErrAlreadyExists
 		}
-		return fmt.Errorf("err while creating user: %w", err) //Need to fix error here
+		return storage.ErrInserting
 	}
 	return nil
 }

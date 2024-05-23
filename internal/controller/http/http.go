@@ -66,19 +66,25 @@ func (ctrl *Controller) configureRoutes() {
 
 		todos := api.Group("/todos")
 		{
-		////	todos.GET("/", ctrl.HandleGetTodos)
-		////	todos.GET("/{id}", ctrl.HandleGetTodoByID)
+			////	todos.GET("/", ctrl.HandleGetTodos)
+			////	todos.GET("/{id}", ctrl.HandleGetTodoByID)
 			todos.POST("/", ctrl.HandleCreateTodo)
-		////	todos.PUT("/{id}", ctrl.HandleUpdateTodo)
-		////	todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
+			////	todos.PUT("/{id}", ctrl.HandleUpdateTodo)
+			////	todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
 		}
 
-		groups := api.Group("/groups")
+		group := api.Group("/groups")
 		{
-			groups.POST("/", ctrl.HandleCreateGroup)
-			groups.GET("/{id}", ctrl.HandleGetGroupByID)
-			groups.POST("/create_invite", ctrl.HandleCreateInvite)
-			groups.GET("/me/groups", ctrl.HandleGetMyGroups)
+			group.POST("/invite/{user_id}{project_id}", ctrl.HandleCreateInvite)
+			group.GET("/me/groups", ctrl.HandleGetMyGroups)
+		}
+
+		projects := api.Group("/projects")
+		{
+			projects.POST("/create", ctrl.HandleCreateProject)
+			projects.GET("/{id}", ctrl.HandleGetGroupByID)
+			projects.POST("/invite/{user_id}{project_id}", ctrl.HandleCreateInvite) // не так
+			projects.GET("/me/projects", ctrl.HandleGetMyGroups)
 		}
 	}
 }

@@ -29,10 +29,15 @@ type (
 		NewPassword      string `json:"new_password"`
 		NewPasswordAgain string `json:"new_password_again"`
 	}
-	// TodoCreateRequest :Creation TodoType Request from user
+	// TodoCreateRequest :Creating TodoType Request from user
 	TodoCreateRequest struct {
 		Name        string `json:"name"`
 		Description string `json:"description"`
+	}
+	// GroupRequest :Creating Group Invite Request
+	GroupRequest struct {
+		UserID    uuid.UUID `json:"user_id"`
+		ProjectID uuid.UUID `json:"project_id"`
 	}
 )
 

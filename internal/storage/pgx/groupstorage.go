@@ -14,31 +14,21 @@ import (
 )
 
 const (
-	queryMigrateG = `CREATE TABLE IF NOT EXISTS projects
-(
-    "id" UUID NOT NULL UNIQUE,
-    "name" VARCHAR NOT NULL,
-    "created_by" UUID NOT NULL ,
-    PRIMARY KEY ("id"),
-    FOREIGN KEY ("created_by") REFERENCES users(id) ON DELETE CASCADE
-);`
-
-	queryMigrateGU = `CREATE TABLE IF NOT EXISTS users_in_projects
+	queryMigrateG = `CREATE TABLE IF NOT EXISTS users_in_projects
 (
    	"user_id" UUID NOT NULL,
     "project_id" UUID NOT NULL,
     FOREIGN KEY ("user_id") REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY ("project_id") REFERENCES projects(id) ON DELETE CASCADE
 );`
-	queryCreateProjects = `INSERT INTO projects (id, name, created_by) VALUES ($1, $2, $3);` // ???
+	queryGetUsersInGroup = `SELECT uinp.user_id, uinp.project_id
+FROM users_in_projects AS uinp
+WHERE project_id = $1`
 
-	queryGetByIDG = `SELECT p.id, p.name, p.created_by
-FROM projects AS p
-WHERE p.id = $1;`
+	queryInsertIntoGroup = `INSERT INTO users_in_projects (user_id, project_id) values ($1, $2)`
 
-	queryGetMyGroups = `SELECT p.id, p.name, p.created_by 
-FROM projects AS p
-WHERE created_by = $1;`
+	queryDeleteFromGroup = `DELETE FROM users_in_projects
+WHERE (user_id, project_id) = ($1, $2)`
 )
 
 // Checking whether the interface "GroupStorage" implements the structure "groupStorage"
@@ -67,15 +57,15 @@ func (store *groupStorage) migrate() (err error) {
 	if err != nil {
 		return err
 	}
-	_, err = store.pool.Exec(context.Background(), queryMigrateGU)
+	_, err = store.pool.Exec(context.Background(), queryMigrateG)
 	if err != nil {
 		return err
 	}
 	return err
 }
 
-func (store *groupStorage) Create(ctx context.Context, group *model.GroupDTO) error {
-	_, err := store.pool.Exec(ctx, queryCreateProjects, group.ID, group.Name, group.CreatedBy)
+func (store *groupStorage) CreateGroup(ctx context.Context, group *model.GroupDTO) error {
+	_, err := store.pool.Exec(ctx, queryInsertIntoGroup, group.UserID, group.ProjectID)
 	if err != nil {
 		if errors.As(err, &store.pgErr) && (pgerrcode.UniqueViolation == store.pgErr.Code) {
 			return storage.ErrAlreadyExists
@@ -85,22 +75,9 @@ func (store *groupStorage) Create(ctx context.Context, group *model.GroupDTO) er
 	return nil
 }
 
-func (store *groupStorage) GetByID(ctx context.Context, id uuid.UUID) (*model.GroupDTO, error) {
-	g := new(model.GroupDTO)
-	err := store.pool.QueryRow(ctx, queryGetByIDG, id).Scan(&g.ID, &g.Name, &g.CreatedBy)
-	if err != nil {
-		return nil, storage.ErrGetByID
-	}
-	return g, nil
-}
-
-func (store *groupStorage) CreateInvite(ctx context.Context) error {
-	return nil
-}
-
-func (store *groupStorage) GetMyGroups(ctx context.Context, createdByID uuid.UUID) ([]model.GroupDTO, error) {
-	var res []model.GroupDTO
-	rows, err := store.pool.Query(ctx, queryGetMyGroups, createdByID)
+func (store *groupStorage) GetUsersInProjectByProjectID(ctx context.Context, projectID uuid.UUID) ([]model.GroupDTO, error) {
+	var usersList []model.GroupDTO
+	rows, err := store.pool.Query(ctx, queryGetUsersInGroup, projectID)
 	if err != nil {
 		return nil, fmt.Errorf("error while querying my groups: %w", err)
 	}
@@ -109,16 +86,27 @@ func (store *groupStorage) GetMyGroups(ctx context.Context, createdByID uuid.UUI
 
 	for rows.Next() {
 		var temp model.GroupDTO
-		err = rows.Scan(&temp.ID, &temp.Name, &temp.CreatedBy)
+		err = rows.Scan(&temp.UserID, &temp.ProjectID)
 		if err != nil {
 			return nil, fmt.Errorf("error while scanning groups: %w", err)
 		}
-		res = append(res, temp)
+		usersList = append(usersList, temp)
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("unwrapped error: %w", err)
 	}
 
-	return res, nil
+	return usersList, nil
+}
+
+func (store *groupStorage) DeleteFromGroup(ctx context.Context, group *model.GroupDTO) error {
+	_, err := store.pool.Exec(ctx, queryDeleteFromGroup, group.UserID, group.ProjectID)
+	if err != nil {
+		if errors.As(err, &store.pgErr) && (pgerrcode.UniqueViolation == store.pgErr.Code) {
+			return storage.ErrAlreadyExists
+		}
+		return storage.ErrInserting
+	}
+	return nil
 }

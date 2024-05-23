@@ -1,6 +1,8 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+)
 
 type (
 	// UserDTO : User data transfer object
@@ -19,6 +21,11 @@ type (
 	}
 	// GroupDTO : Group data transfer object
 	GroupDTO struct {
+		UserID    uuid.UUID `json:"user_id"`
+		ProjectID uuid.UUID `json:"project_id"`
+	}
+	// ProjectsDTO : Projects data transfer object
+	ProjectsDTO struct {
 		ID        uuid.UUID `json:"id"`
 		Name      string    `json:"name"`
 		CreatedBy uuid.UUID `json:"created_by"`

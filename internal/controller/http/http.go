@@ -73,19 +73,14 @@ func (ctrl *Controller) configureRoutes() {
 			////	todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
 		}
 
-		groups := api.Group("/groups")
-		{
-			groups.POST("/invite/{user_id}{project_id}", ctrl.HandleCreateInvite)
-			groups.GET("/my-groups", ctrl.HandleGetMyGroups)
-		}
-
 		projects := api.Group("/projects")
 		{
 			projects.POST("/create", ctrl.HandleCreateProject)
-			projects.GET("/{id}", ctrl.HandleGetGroupByID)
-			projects.POST("/invite/{user_id}{project_id}", ctrl.HandleCreateInvite) // не так
-			projects.GET("/me/projects", ctrl.HandleGetMyGroups)
+			projects.DELETE("/delete/{id}", ctrl.HandleDeleteProject)
+			projects.POST("/update/{id}", ctrl.HandleUpdateProject)
+			projects.GET("/", ctrl.HandleGetMyProjects)
 		}
+
 		columns := api.Group("/columns")
 		{
 			columns.POST("/", ctrl.HandleCreateColumn)
@@ -116,6 +111,16 @@ func (ctrl *Controller) configureMiddlewares() {
 	ctrl.server.Use(middlewares...)
 }
 
+func (ctrl *Controller) logValuesFunc(_ echo.Context, v middleware.RequestLoggerValues) error {
+	ctrl.log.Info("Request",
+		zap.String("uri", v.URI),
+		zap.String("method", v.Method),
+		zap.Duration("duration", v.Latency),
+		zap.String("request-id", v.RequestID),
+	)
+	return nil
+}
+
 func (ctrl *Controller) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	//  goroutine of starting HTTP server
@@ -131,14 +136,4 @@ func (ctrl *Controller) Run(ctx context.Context) error {
 
 func (ctrl *Controller) Shutdown(ctx context.Context) error {
 	return ctrl.server.Shutdown(ctx)
-}
-
-func (ctrl *Controller) logValuesFunc(_ echo.Context, v middleware.RequestLoggerValues) error {
-	ctrl.log.Info("Request",
-		zap.String("uri", v.URI),
-		zap.String("method", v.Method),
-		zap.Duration("duration", v.Latency),
-		zap.String("request-id", v.RequestID),
-	)
-	return nil
 }

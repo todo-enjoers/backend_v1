@@ -366,172 +366,26 @@ func (ctrl *Controller) HandleRefreshToken(c echo.Context) error {
 	return c.JSON(http.StatusCreated, response)
 }
 
-// ./api/groups
-func (ctrl *Controller) HandleCreateInvite(c echo.Context) error {
-	var (
-		request model.GroupRequest
-		err     error
-	)
-
-	// Binding request
-	if err = c.Bind(&request); err != nil {
-		ctrl.log.Error("error while binding request", zap.Error(err))
-		return c.JSON(
-			http.StatusBadRequest,
-			model.ErrorResponse{
-				Error: controller.ErrBindingRequest.Error(),
-			},
-		)
-	}
-
-	// Validate user with Token returning id
-	requestUserID, err := ctrl.getUserIDFromRequest(c.Request())
-	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
-		return c.JSON(
-			http.StatusUnauthorized,
-			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
-			},
-		)
-	}
-
-	ctrl.log.Info("HandleAddInGroup : got user invitor", zap.String("added_by_user_id", requestUserID.String()))
-
-	// Taking group from GroupDTO with new data
-	user := &model.GroupDTO{
-		UserID:    requestUserID,
-		ProjectID: request.ProjectID,
-	}
-	ctrl.log.Info("got user", zap.Any("user", user))
-
-	// Inserting in DB the group
-	err = ctrl.store.Group().CreateGroup(c.Request().Context(), user)
-	if err != nil {
-		if errors.Is(err, storage.ErrAlreadyExists) {
-			ctrl.log.Error("user already in group", zap.Error(err))
-			return c.JSON(
-				http.StatusConflict,
-				model.ErrorResponse{
-					Error: storage.ErrAlreadyExists.Error(),
-				},
-			)
-		}
-		ctrl.log.Error("got error while adding in group", zap.Error(err))
-		return c.JSON(
-			http.StatusBadRequest,
-			model.ErrorResponse{
-				Error: storage.ErrCreateGroup.Error(),
-			},
-		)
-	}
-
-	response := model.GroupResponse{
-		UserID:    user.UserID,
-		ProjectID: user.ProjectID,
-	}
-
-	return c.JSON(http.StatusCreated, response)
-}
-
-func (ctrl *Controller) HandleGetGroupByID(c echo.Context) error {
-	var (
-		group     []model.GroupDTO
-		err       error
-		projectID uuid.UUID
-	)
-
-	// Taking a UserID from request
-	_, err = ctrl.getUserIDFromRequest(c.Request())
-	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
-		return c.JSON(
-			http.StatusUnauthorized,
-			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
-			},
-		)
-	}
-	// Todo: add this log example to all handlers
-	ctrl.log.Info("HandleGetGroup: got user id", zap.String("user_id", requestUserID.String()))
-
-	// Getting "Group" from DB
-	group, err = ctrl.store.Group().GetUsersInProjectByProjectID(c.Request().Context())
-	if err != nil {
-		ctrl.log.Error("error while getting group by id from DB", zap.Error(err))
-		return c.JSON(
-			http.StatusNoContent,
-			model.ErrorResponse{
-				Error: storage.ErrGetByID.Error(),
-			},
-		)
-	}
-
-	response := &model.GroupResponse{
-		ID:        group.ID,
-		Name:      group.Name,
-		CreatedBy: group.CreatedBy,
-	}
-
-	return c.JSON(http.StatusOK, response)
-}
-
-//func (ctrl *Controller) HandleCreateInvite(c echo.Context) error {
-//	url := fmt.Sprintf("?user_id=%s&project_id=%s")
-//}
-
-func (ctrl *Controller) HandleGetMyGroups(c echo.Context) error {
-	var (
-		listGroups []model.GroupDTO
-		err        error
-		UserID     uuid.UUID
-	)
-
-	// Taking a UserID from request
-	UserID, err = ctrl.getUserIDFromRequest(c.Request())
-	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
-		return c.JSON(
-			http.StatusUnauthorized,
-			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
-			},
-		)
-	}
-	ctrl.log.Info("HandleGetAll: logged in", zap.String("user_id", UserID.String()))
-
-	// Taking a UserID from request
-	UserID, err = ctrl.getUserIDFromRequest(c.Request())
-	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
-		return c.JSON(
-			http.StatusUnauthorized,
-			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
-			},
-		)
-	}
-	// Todo: add this log example to all handlers
-	ctrl.log.Info("HandleGetGroup: got user id", zap.String("user_id", UserID.String()))
-
-	// Getting list of "Groups" from DB
-	listGroups, err = ctrl.store.Group().GetUsersInProjectByProjectID(c.Request().Context(), UserID)
-	if err != nil {
-		ctrl.log.Error("error while getting group by id from DB", zap.Error(err))
-		return c.JSON(
-			http.StatusNoContent,
-			model.ErrorResponse{
-				Error: storage.ErrGetByID.Error(),
-			},
-		)
-	}
-
-	return c.JSON(http.StatusOK, listGroups)
-}
-
 // ./api/projects
 
+func (ctrl *Controller) HandleCreateProject(c echo.Context) error {
+	
+}
+
+func (ctrl *Controller) HandleDeleteProject(c echo.Context) error {
+
+}
+
+func (ctrl *Controller) HandleUpdateProject(c echo.Context) error {
+
+}
+
+func (ctrl *Controller) HandleGetMyProject(c echo.Context) error {
+
+}
+
 // ./api/todos
+
 func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 	var request model.TodoCreateRequest
 	user, err := ctrl.getUserIDFromRequest(c.Request())

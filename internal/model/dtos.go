@@ -16,7 +16,7 @@ type (
 		ID          uuid.UUID `json:"id"`
 		Name        string    `json:"name"`
 		Description string    `json:"description"`
-		IsCompleted bool      `json:"is_complete"`
+		IsCompleted bool      `json:"is_completed"`
 		ProjectID   uuid.UUID `json:"project_id"`
 		CreatedBy   uuid.UUID `json:"created_by"`
 		Column      string    `json:"column"`

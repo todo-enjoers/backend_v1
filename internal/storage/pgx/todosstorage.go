@@ -2,9 +2,9 @@ package pgx
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5/pgconn"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/todo-enjoers/backend_v1/internal/model"
 	"github.com/todo-enjoers/backend_v1/internal/storage"
@@ -12,31 +12,6 @@ import (
 )
 
 var _ storage.TodoStorage = (*todoStorage)(nil)
-
-const (
-	queryMigrate = `CREATE TABLE IF NOT EXISTS todos (
-    "id" UUID PRIMARY KEY NOT NULL UNIQUE,
-    "name" VARCHAR NOT NULL UNIQUE,
-    "description" VARCHAR NOT NULL,
-    "is_completed" BOOLEAN NOT NULL DEFAULT FALSE,
-    "created_by" UUID NOT NULL,
-    "project_id" UUID NOT NULL,
-    "column" VARCHAR NOT NULL,
-    FOREIGN KEY (project_id, "column") REFERENCES project_columns(project_id, name),
-    FOREIGN KEY (created_by) REFERENCES users(id)
-);
-
-CREATE INDEX IF NOT EXISTS todos_created_by_index ON todos(created_by);
-`
-	queryCreate      = `INSERT INTO todos (id, name, description, created_by, project_id, "column" )VALUES ($1, $2, $3, $4, $5, $6)`
-	queryTodoGetByID = `SELECT created_by, name, id, description FROM todos WHERE id = $1`
-	queryGetAllTodos = `SELECT t.id, t.name, t.description, t.is_completed, t.project_id
-FROM todos AS t ;`
-	queryUpdate = `UPDATE todos
-		SET name = $1, description = $2, is_completed = $3
-		WHERE id = $4 AND created_by = $5 and project_id = $6`
-	queryDelete = `DELETE FROM todos WHERE id = $1 and created_by = $2 and project_id = $3`
-)
 
 type todoStorage struct {
 	pool  *pgxpool.Pool
@@ -57,12 +32,12 @@ func newTodoStorage(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError) 
 }
 
 func (store *todoStorage) migrateT() error {
-	_, err := store.pool.Exec(context.Background(), queryMigrate)
+	_, err := store.pool.Exec(context.Background(), queryMigrateT)
 	return err
 }
 
 func (store *todoStorage) Create(ctx context.Context, todo *model.TodoDTO) error {
-	_, err := store.pool.Exec(ctx, queryCreate, todo.CreatedBy, todo.Name, todo.ID, todo.Description)
+	_, err := store.pool.Exec(ctx, queryCreateTodo, todo.CreatedBy, todo.Name, todo.ID, todo.Description)
 	return err
 }
 
@@ -100,12 +75,12 @@ func (store *todoStorage) GetAll(ctx context.Context) ([]model.TodoDTO, error) {
 	return res, err
 }
 func (store *todoStorage) Update(ctx context.Context, todo *model.TodoDTO) error {
-	_, err := store.pool.Exec(ctx, queryUpdate, todo.Name, todo.Description, todo.IsCompleted, todo.ID, todo.CreatedBy)
+	_, err := store.pool.Exec(ctx, queryUpdateTodo, todo.Name, todo.Description, todo.IsCompleted, todo.ID, todo.CreatedBy)
 	return err
 }
-func (store *todoStorage) Delete(ctx context.Context, id uuid.UUID, createdBy uuid.UUID) error {
+func (store *todoStorage) Delete(ctx context.Context, id uuid.UUID, columnName string, createdBy uuid.UUID) error {
 
-	commandTag, err := store.pool.Exec(ctx, queryDelete, id, createdBy)
+	commandTag, err := store.pool.Exec(ctx, queryDeleteTodo, id, columnName, createdBy)
 	if err != nil {
 		return err
 	}

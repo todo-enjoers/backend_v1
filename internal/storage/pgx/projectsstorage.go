@@ -13,29 +13,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	queryMigrateP = `CREATE TABLE IF NOT EXISTS projects
-(
-    "id" UUID NOT NULL UNIQUE,
-    "name" VARCHAR NOT NULL,
-    "created_by" UUID NOT NULL ,
-    PRIMARY KEY ("id"),
-    FOREIGN KEY ("created_by") REFERENCES users(id) ON DELETE CASCADE
-);`
-
-	queryGetByIDP = `SELECT p.id, p.name, p.created_by
-FROM projects AS p
-WHERE p.id = $1;`
-
-	queryGetMyProjects = `SELECT p.id, p.name, p.created_by 
-FROM projects AS p
-WHERE created_by = $1;`
-
-	queryCreateProjects = `INSERT INTO projects (id, name, created_by) VALUES ($1, $2, $3);`
-
-	queryUpdateName = `UPDATE projects SET name = $1 WHERE id = $2;`
-)
-
 // Checking whether the interface "GroupStorage" implements the structure "groupStorage"
 var _ storage.ProjectStorage = (*projectsStorage)(nil)
 
@@ -102,10 +79,11 @@ func (store *projectsStorage) GetMyProjects(ctx context.Context, createdByID uui
 }
 
 func (store *projectsStorage) UpdateProjectName(ctx context.Context, name string, id uuid.UUID) error {
-	_, err := store.pool.Exec(ctx, queryUpdateName, name, id)
+	_, err := store.pool.Exec(ctx, queryUpdateProjectName, name, id)
 	return err
 }
 
 func (store *projectsStorage) DeleteProject(ctx context.Context, id uuid.UUID) error {
-
+	_, err := store.pool.Exec(ctx, queryDeleteProject, id)
+	return err
 }

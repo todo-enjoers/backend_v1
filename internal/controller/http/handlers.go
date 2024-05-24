@@ -563,7 +563,7 @@ func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 		Column:      request.Column,
 	}
 
-	err = ctrl.store.Todo().Create(c.Request().Context(), todo, userId, todo.ProjectID, todo.Column)
+	err = ctrl.store.Todo().Create(c.Request().Context(), todo)
 	if errors.Is(err, storage.ErrAlreadyExists) {
 		ctrl.log.Error("user already exists", zap.Error(err))
 		return c.JSON(
@@ -583,7 +583,7 @@ func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 		Column:      todo.Column,
 	}
 	ctrl.log.Info("successfully created new todo", zap.Any("todo", response))
-	return c.JSON(http.StatusCreated, todo)
+	return c.JSON(http.StatusCreated, response)
 
 }
 
@@ -620,7 +620,6 @@ func (ctrl *Controller) HandleGetTodosById(c echo.Context) error {
 
 func (ctrl *Controller) HandleChangeTodo(c echo.Context) error {
 	var request model.TodoUpdateRequest
-
 	// get user id
 	user, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
@@ -653,7 +652,7 @@ func (ctrl *Controller) HandleChangeTodo(c echo.Context) error {
 		)
 	}
 
-	// get user by id
+	// get todo by id
 	todo, err := ctrl.store.Todo().GetByID(c.Request().Context(), todoID)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
@@ -750,7 +749,6 @@ func (ctrl *Controller) HandleGetAllTodos(c echo.Context) error {
 		listTodos []model.TodoDTO
 		err       error
 		UserID    uuid.UUID
-		Columns   string
 	)
 
 	// Taking a UserID from request
@@ -777,10 +775,8 @@ func (ctrl *Controller) HandleGetAllTodos(c echo.Context) error {
 			},
 		)
 	}
-	// Todo: add this log example to all handlers
 	ctrl.log.Info("HandleGetAllTodos: got user id", zap.String("user_id", UserID.String()))
 
-	// Getting list of "Groups" from DB
 	listTodos, err = ctrl.store.Todo().GetAll(c.Request().Context(), UserID)
 	if err != nil {
 		ctrl.log.Error("error while getting todos by id from DB", zap.Error(err))
@@ -796,3 +792,221 @@ func (ctrl *Controller) HandleGetAllTodos(c echo.Context) error {
 }
 
 // ./api/columns
+
+func (ctrl *Controller) HandleCreateColumn(c echo.Context) error {
+	var request model.ColumRequest
+	if err := c.Bind(&request); err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: controller.ErrBindingRequest.Error(),
+			},
+		)
+	}
+	_, err := ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+
+	column := &model.ColumDTO{
+		ProjectId: request.ProjectId,
+		Name:      request.Name,
+		Order:     request.Order,
+	}
+
+	err = ctrl.store.Column().CreateColumn(c.Request().Context(), column)
+	if errors.Is(err, storage.ErrAlreadyExists) {
+		ctrl.log.Error("user already exists", zap.Error(err))
+		return c.JSON(
+			http.StatusConflict,
+			model.ErrorResponse{
+				Error: storage.ErrAlreadyExists.Error(),
+			},
+		)
+	}
+	response := model.ColumRequest{
+		ProjectId: request.ProjectId,
+		Name:      request.Name,
+		Order:     request.Order,
+	}
+	ctrl.log.Info("successfully created new todo", zap.Any("todo", response))
+	return c.JSON(http.StatusCreated, response)
+
+}
+
+func (ctrl *Controller) HandleDeleteColumn(c echo.Context) error {
+	projectID := c.Param("id")
+	projectUUID, err := uuid.Parse(projectID)
+	if err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: storage.ErrBadRequestId.Error(),
+			})
+	}
+	columnName := c.Param("name")
+	_, err = ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+
+	err = ctrl.store.Column().DeleteColumn(c.Request().Context(), columnName, projectUUID)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			model.ErrorResponse{
+				Error: storage.ErrInternalServer.Error(),
+			})
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (ctrl *Controller) HandleGetColumnByName(c echo.Context) error {
+	projectID := c.Param("id")
+	projectUUID, err := uuid.Parse(projectID)
+	if err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: storage.ErrBadRequestId.Error(),
+			})
+	}
+	columnName := c.Param("name")
+	_, err = ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+	column, err := ctrl.store.Column().GetColumnByName(c.Request().Context(), columnName, projectUUID)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotAccessible) {
+			return c.JSON(http.StatusNotFound, model.ErrorResponse{
+				Error: storage.ErrNotFound.Error(),
+			})
+		}
+		return err
+	}
+	return c.JSON(http.StatusOK, column)
+}
+
+func (ctrl *Controller) HandleUpdateColumn(c echo.Context) error {
+	var request model.ColumRequest
+	_, err := ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+	projectID := c.Param("id")
+	projectUUID, err := uuid.Parse(projectID)
+	if err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: storage.ErrBadRequestId.Error(),
+			})
+	}
+	columnName := c.Param("name")
+	if err := c.Bind(&request); err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: storage.ErrBadRequestId.Error(),
+			},
+		)
+	}
+	column, err := ctrl.store.Column().GetColumnByName(c.Request().Context(), columnName, projectUUID)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return c.JSON(
+				http.StatusNotFound,
+				model.ErrorResponse{
+					Error: storage.ErrNotFound.Error(),
+				},
+			)
+		}
+		return c.JSON(
+			http.StatusInternalServerError,
+			model.ErrorResponse{
+				Error: storage.ErrInternalServer.Error(),
+			},
+		)
+	}
+	column.Name = request.Name
+	column.Order = request.Order
+	err = ctrl.store.Column().UpdateColumn(c.Request().Context(), column, columnName, projectUUID)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			model.ErrorResponse{
+				Error: storage.ErrInternalServer.Error(),
+			},
+		)
+	}
+
+	ctrl.log.Info("successfully updated todo", zap.Any("todo", column))
+	return c.JSON(http.StatusOK, column)
+}
+
+func (ctrl *Controller) HandleGetAllColumn(c echo.Context) error {
+	projectID := c.Param("id")
+	projectUUID, err := uuid.Parse(projectID)
+	if err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: storage.ErrBadRequestId.Error(),
+			})
+	}
+	var (
+		listColumns []model.ColumDTO
+		UserID      uuid.UUID
+	)
+
+	// Taking a UserID from request
+	UserID, err = ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+	ctrl.log.Info("HandleGetAll: logged in", zap.String("user_id", UserID.String()))
+
+	listColumns, err = ctrl.store.Column().GetAllColumns(c.Request().Context(), projectUUID)
+	if err != nil {
+		ctrl.log.Error("error while getting group by id from DB", zap.Error(err))
+		return c.JSON(
+			http.StatusNoContent,
+			model.ErrorResponse{
+				Error: storage.ErrGetByID.Error(),
+			},
+		)
+	}
+
+	return c.JSON(http.StatusOK, listColumns)
+}

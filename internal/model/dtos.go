@@ -32,10 +32,9 @@ type (
 		Name      string    `json:"name"`
 		CreatedBy uuid.UUID `json:"created_by"`
 	}
-
-	//ColumnDTO : Column data transfer object
+	// ColumnDTO : Column data transfer object
 	ColumDTO struct {
-		ProjectId uuid.UUID `json:"id"`
+		ProjectId uuid.UUID `json:"project_id"`
 		Name      string    `json:"name"`
 		Order     int       `json:"order"`
 	}

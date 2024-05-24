@@ -44,4 +44,9 @@ type (
 		CreatedBy   uuid.UUID `json:"created_by"`
 		Column      string    `json:"column"`
 	}
+	ColumResponse struct {
+		ProjectId uuid.UUID `json:"project_id"`
+		Name      string    `json:"name"`
+		Order     int       `json:"order"`
+	}
 )

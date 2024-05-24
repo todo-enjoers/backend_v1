@@ -15,13 +15,11 @@ type UserStorage interface {
 }
 
 type TodoStorage interface {
-	Create(ctx context.Context, todo *model.TodoDTO, createdBy uuid.UUID, projectBy uuid.UUID, column string) error
+	Create(ctx context.Context, todo *model.TodoDTO) error
 	GetByID(ctx context.Context, id uuid.UUID) (*model.TodoDTO, error)
-	GetAll(ctx context.Context, createdBy uuid.UUID, column uuid.UUID) ([]model.TodoDTO, error)
+	GetAll(ctx context.Context, createdBy uuid.UUID) ([]model.TodoDTO, error)
 	Update(ctx context.Context, todo *model.TodoDTO, id uuid.UUID) error
 	DeleteTodos(ctx context.Context, id uuid.UUID) error
-	//CreateColumns()
-	//
 }
 
 type GroupStorage interface {
@@ -36,10 +34,18 @@ type ProjectStorage interface {
 	GetMyProjects(ctx context.Context, createdByID uuid.UUID) ([]model.ProjectsDTO, error)
 	UpdateName(ctx context.Context, name string, id uuid.UUID) error
 }
+type ColumnStorage interface {
+	CreateColumn(ctx context.Context, column *model.ColumDTO) error
+	DeleteColumn(ctx context.Context, name string, projectId uuid.UUID) error
+	GetColumnByName(ctx context.Context, name string, projectId uuid.UUID) (*model.ColumDTO, error)
+	UpdateColumn(ctx context.Context, column *model.ColumDTO, name string, projectId uuid.UUID) error
+	GetAllColumns(ctx context.Context, projectId uuid.UUID) ([]model.ColumDTO, error)
+}
 
 type Interface interface {
 	User() UserStorage
 	Todo() TodoStorage
 	Group() GroupStorage
 	Project() ProjectStorage
+	Column() ColumnStorage
 }

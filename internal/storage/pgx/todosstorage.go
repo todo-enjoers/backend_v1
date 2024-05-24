@@ -32,7 +32,7 @@ CREATE INDEX IF NOT EXISTS todos_created_by_index ON todos(created_by);
 	queryTodoGetByID = `SELECT created_by, name, id, description FROM todos WHERE id = $1`
 	queryGetAllTodos = `SELECT name, id, description, is_completed 
 		FROM todos 
-		WHERE created_by = $1 AND "column" = $2;`
+		WHERE created_by = $1;`
 	queryUpdate = `UPDATE todos
 		SET name = $1, description = $2, is_completed = $3
 		WHERE id = $4`
@@ -62,8 +62,8 @@ func (store *todoStorage) migrateT() error {
 	return err
 }
 
-func (store *todoStorage) Create(ctx context.Context, todo *model.TodoDTO, createdBy uuid.UUID, projectBy uuid.UUID, column string) error {
-	_, err := store.pool.Exec(ctx, queryCreate, todo.ID, todo.Name, todo.Description, todo.IsCompleted, todo.ProjectID, todo.CreatedBy, todo.Column, createdBy, projectBy, column)
+func (store *todoStorage) Create(ctx context.Context, todo *model.TodoDTO) error {
+	_, err := store.pool.Exec(ctx, queryCreate, todo.ID, todo.Name, todo.Description, todo.IsCompleted, todo.ProjectID, todo.CreatedBy, todo.Column)
 	return err
 }
 
@@ -76,10 +76,10 @@ func (store *todoStorage) GetByID(ctx context.Context, id uuid.UUID) (*model.Tod
 	return &todo, nil
 }
 
-func (store *todoStorage) GetAll(ctx context.Context, createdBy uuid.UUID, column uuid.UUID) ([]model.TodoDTO, error) {
+func (store *todoStorage) GetAll(ctx context.Context, createdBy uuid.UUID) ([]model.TodoDTO, error) {
 	var res []model.TodoDTO
 
-	rows, err := store.pool.Query(ctx, queryGetAllTodos, createdBy, column)
+	rows, err := store.pool.Query(ctx, queryGetAllTodos, createdBy)
 	if err != nil {
 		return nil, fmt.Errorf("error while querying all todos: %w", err)
 	}

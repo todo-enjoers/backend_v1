@@ -17,6 +17,7 @@ type Storage struct {
 	group   *groupStorage
 	project *projectsStorage
 	todo    *todoStorage
+	column  *columnStorage
 	pgErr   *pgconn.PgError
 }
 
@@ -41,6 +42,11 @@ func New(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError) (*Storage, 
 		return nil, err
 	}
 
+	columns, err := newColumnStorage(pool, log, pgErr)
+	if err != nil {
+		return nil, err
+	}
+
 	store := &Storage{
 		pool:    pool,
 		log:     log,
@@ -48,6 +54,7 @@ func New(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError) (*Storage, 
 		group:   groups,
 		project: projects,
 		todo:    todos,
+		column:  columns,
 	}
 
 	return store, nil
@@ -68,3 +75,5 @@ func (s *Storage) Todo() storage.TodoStorage {
 func (s *Storage) Project() storage.ProjectStorage {
 	return s.project
 }
+
+func (s *Storage) Column() storage.ColumnStorage { return s.column }

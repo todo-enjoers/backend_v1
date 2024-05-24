@@ -86,14 +86,14 @@ func (ctrl *Controller) configureRoutes() {
 			projects.POST("/invite/{user_id}{project_id}", ctrl.HandleCreateInvite) // не так
 			projects.GET("/me/projects", ctrl.HandleGetMyGroups)
 		}
-		columns := api.Group("/columns")
+		columns := api.Group("/projects/")
 		{
-			columns.POST("/", ctrl.HandleCreateColumn)
-			columns.DELETE("/{id}", ctrl.HandleDeleteColumn)
-			columns.PUT("/{id}", ctrl.HandleUpdateColumn)
-			columns.GET("/{id}", ctrl.HandleGetColumnById)
-			columns.GET("/{if}", ctrl.HandleGetAllColumn)
-		}*/
+			columns.POST("columns/", ctrl.HandleCreateColumn)
+			columns.DELETE("/:id/:name", ctrl.HandleDeleteColumn)
+			columns.PUT(":id/:name", ctrl.HandleUpdateColumn)
+			columns.GET(":id/:name", ctrl.HandleGetColumnByName)
+			columns.GET(":id/", ctrl.HandleGetAllColumn)
+		}
 	}
 }
 

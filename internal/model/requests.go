@@ -49,6 +49,11 @@ type (
 		UserID    uuid.UUID `json:"user_id"`
 		ProjectID uuid.UUID `json:"project_id"`
 	}
+	ColumRequest struct {
+		ProjectId uuid.UUID `json:"project_id"`
+		Name      string    `json:"name"`
+		Order     int       `json:"order"`
+	}
 )
 
 func (req *UserRegisterRequest) Validate() (ok bool, err error) {

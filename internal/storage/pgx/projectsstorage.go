@@ -65,7 +65,7 @@ func (store *projectsStorage) migrate() (err error) {
 	return err
 }
 
-func (store *projectsStorage) CreateProjects(ctx context.Context, project *model.ProjectsDTO) error {
+func (store *projectsStorage) CreateProject(ctx context.Context, project *model.ProjectsDTO) error {
 	_, err := store.pool.Exec(ctx, queryCreateProjects, project.ID, project.Name, project.CreatedBy)
 	if err != nil {
 		if errors.As(err, &store.pgErr) && (pgerrcode.UniqueViolation == store.pgErr.Code) {
@@ -74,15 +74,6 @@ func (store *projectsStorage) CreateProjects(ctx context.Context, project *model
 		return storage.ErrInserting
 	}
 	return nil
-}
-
-func (store *projectsStorage) GetByID(ctx context.Context, id uuid.UUID) (*model.ProjectsDTO, error) {
-	g := new(model.ProjectsDTO)
-	err := store.pool.QueryRow(ctx, queryGetByIDP, id).Scan(&g.ID, &g.Name, &g.CreatedBy)
-	if err != nil {
-		return nil, storage.ErrGetByID
-	}
-	return g, nil
 }
 
 func (store *projectsStorage) GetMyProjects(ctx context.Context, createdByID uuid.UUID) ([]model.ProjectsDTO, error) {
@@ -110,7 +101,11 @@ func (store *projectsStorage) GetMyProjects(ctx context.Context, createdByID uui
 	return projectsList, nil
 }
 
-func (store *projectsStorage) UpdateName(ctx context.Context, name string, id uuid.UUID) error {
+func (store *projectsStorage) UpdateProjectName(ctx context.Context, name string, id uuid.UUID) error {
 	_, err := store.pool.Exec(ctx, queryUpdateName, name, id)
 	return err
+}
+
+func (store *projectsStorage) DeleteProject(ctx context.Context, id uuid.UUID) error {
+
 }

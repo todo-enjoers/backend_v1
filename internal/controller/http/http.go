@@ -75,8 +75,8 @@ func (ctrl *Controller) configureRoutes() {
 
 		groups := api.Group("/groups")
 		{
-			group.POST("/invite/{user_id}{project_id}", ctrl.HandleCreateInvite)
-			group.GET("/me/groups", ctrl.HandleGetMyGroups)
+			groups.POST("/invite/{user_id}{project_id}", ctrl.HandleCreateInvite)
+			groups.GET("/my-groups", ctrl.HandleGetMyGroups)
 		}
 
 		projects := api.Group("/projects")

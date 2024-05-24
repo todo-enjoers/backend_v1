@@ -24,7 +24,7 @@ type TodoStorage interface {
 
 type GroupStorage interface {
 	CreateGroup(ctx context.Context, group *model.GroupDTO) error
-	GetUsersInProjectByProjectID(ctx context.Context, projectID uuid.UUID) ([]model.GroupDTO, error)
+	GetUsersInProjectByProjectID(ctx context.Context, group *model.GroupDTO) ([]model.GroupDTO, error)
 	DeleteFromGroup(ctx context.Context, group *model.GroupDTO) error
 }
 

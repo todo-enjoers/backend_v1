@@ -436,13 +436,13 @@ func (ctrl *Controller) HandleCreateInvite(c echo.Context) error {
 
 func (ctrl *Controller) HandleGetGroupByID(c echo.Context) error {
 	var (
-		group         []model.GroupDTO
-		err           error
-		requestUserID uuid.UUID
+		group     []model.GroupDTO
+		err       error
+		projectID uuid.UUID
 	)
 
 	// Taking a UserID from request
-	requestUserID, err = ctrl.getUserIDFromRequest(c.Request())
+	_, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(
@@ -515,7 +515,7 @@ func (ctrl *Controller) HandleGetMyGroups(c echo.Context) error {
 	ctrl.log.Info("HandleGetGroup: got user id", zap.String("user_id", UserID.String()))
 
 	// Getting list of "Groups" from DB
-	listGroups, err = ctrl.store.Group().GetMyGroups(c.Request().Context(), UserID)
+	listGroups, err = ctrl.store.Group().GetUsersInProjectByProjectID(c.Request().Context(), UserID)
 	if err != nil {
 		ctrl.log.Error("error while getting group by id from DB", zap.Error(err))
 		return c.JSON(

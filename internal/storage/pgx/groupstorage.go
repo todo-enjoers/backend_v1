@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -23,7 +22,7 @@ const (
 );`
 	queryGetUsersInGroup = `SELECT uinp.user_id, uinp.project_id
 FROM users_in_projects AS uinp
-WHERE project_id = $1`
+WHERE project_id = $1 and user_id = $2`
 
 	queryInsertIntoGroup = `INSERT INTO users_in_projects (user_id, project_id) values ($1, $2)`
 
@@ -75,9 +74,9 @@ func (store *groupStorage) CreateGroup(ctx context.Context, group *model.GroupDT
 	return nil
 }
 
-func (store *groupStorage) GetUsersInProjectByProjectID(ctx context.Context, projectID uuid.UUID) ([]model.GroupDTO, error) {
+func (store *groupStorage) GetUsersInProjectByProjectID(ctx context.Context, group *model.GroupDTO) ([]model.GroupDTO, error) {
 	var usersList []model.GroupDTO
-	rows, err := store.pool.Query(ctx, queryGetUsersInGroup, projectID)
+	rows, err := store.pool.Query(ctx, queryGetUsersInGroup, group.ProjectID, group.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("error while querying my groups: %w", err)
 	}

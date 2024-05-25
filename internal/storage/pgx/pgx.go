@@ -14,7 +14,6 @@ type Storage struct {
 	pool    *pgxpool.Pool
 	log     *zap.Logger
 	user    *userStorage
-	group   *groupStorage
 	project *projectsStorage
 	todo    *todoStorage
 	column  *columnStorage
@@ -23,11 +22,6 @@ type Storage struct {
 
 func New(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError) (*Storage, error) {
 	users, err := newUserStorage(pool, log, pgErr)
-	if err != nil {
-		return nil, err
-	}
-
-	groups, err := newGroupStorage(pool, log, pgErr)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +45,6 @@ func New(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError) (*Storage, 
 		pool:    pool,
 		log:     log,
 		user:    users,
-		group:   groups,
 		project: projects,
 		todo:    todos,
 		column:  columns,
@@ -64,10 +57,6 @@ func (s *Storage) User() storage.UserStorage {
 	return s.user
 }
 
-func (s *Storage) Group() storage.GroupStorage {
-	return s.group
-}
-
 func (s *Storage) Todo() storage.TodoStorage {
 	return s.todo
 }
@@ -76,4 +65,6 @@ func (s *Storage) Project() storage.ProjectStorage {
 	return s.project
 }
 
-func (s *Storage) Column() storage.ColumnStorage { return s.column }
+func (s *Storage) Column() storage.ColumnStorage {
+	return s.column
+}

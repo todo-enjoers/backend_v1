@@ -35,6 +35,7 @@ type (
 	ErrorResponse struct {
 		Error string `json:"error"`
 	}
+	// TodoCreateResponse : Todos Response
 	TodoCreateResponse struct {
 		ID          uuid.UUID `json:"id"`
 		Name        string    `json:"name"`
@@ -44,9 +45,16 @@ type (
 		CreatedBy   uuid.UUID `json:"created_by"`
 		Column      string    `json:"column"`
 	}
+	// ColumResponse : Column Response from server
 	ColumResponse struct {
 		ProjectId uuid.UUID `json:"project_id"`
 		Name      string    `json:"name"`
 		Order     int       `json:"order"`
+	}
+	// ProjectResponse : Project Response from server
+	ProjectResponse struct {
+		ID        uuid.UUID `json:"id"`
+		Name      string    `json:"name"`
+		CreatedBy uuid.UUID `json:"created_by"`
 	}
 )

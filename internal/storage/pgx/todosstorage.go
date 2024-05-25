@@ -13,32 +13,6 @@ import (
 
 var _ storage.TodoStorage = (*todoStorage)(nil)
 
-const (
-	queryMigrate = `CREATE TABLE IF NOT EXISTS todos (
-    "id" UUID PRIMARY KEY NOT NULL UNIQUE,
-    "name" VARCHAR NOT NULL UNIQUE,
-    "description" VARCHAR NOT NULL,
-    "is_completed" BOOLEAN NOT NULL DEFAULT FALSE,
-    "created_by" UUID NOT NULL,
-    "project_id" UUID NOT NULL,
-    "column" VARCHAR NOT NULL,
-    FOREIGN KEY (project_id, "column") REFERENCES project_columns(project_id, name),
-    FOREIGN KEY (created_by) REFERENCES users(id)
-);
-
-CREATE INDEX IF NOT EXISTS todos_created_by_index ON todos(created_by);
-`
-	queryCreate      = `INSERT INTO todos (id, name, is_completed, description, created_by, project_id, "column" )VALUES ($1, $2, $3, $4, $5, $6, $7)`
-	queryTodoGetByID = `SELECT created_by, name, id, description FROM todos WHERE id = $1`
-	queryGetAllTodos = `SELECT name, id, description, is_completed 
-		FROM todos 
-		WHERE created_by = $1;`
-	queryUpdate = `UPDATE todos
-		SET name = $1, description = $2, is_completed = $3
-		WHERE id = $4`
-	queryDelete = `DELETE FROM todos WHERE id = $1`
-)
-
 type todoStorage struct {
 	pool  *pgxpool.Pool
 	log   *zap.Logger
@@ -58,12 +32,12 @@ func newTodoStorage(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError) 
 }
 
 func (store *todoStorage) migrateT() error {
-	_, err := store.pool.Exec(context.Background(), queryMigrate)
+	_, err := store.pool.Exec(context.Background(), queryMigrateT)
 	return err
 }
 
 func (store *todoStorage) Create(ctx context.Context, todo *model.TodoDTO) error {
-	_, err := store.pool.Exec(ctx, queryCreate, todo.ID, todo.Name, todo.Description, todo.IsCompleted, todo.ProjectID, todo.CreatedBy, todo.Column)
+	_, err := store.pool.Exec(ctx, queryCreateTodo, todo.CreatedBy, todo.Name, todo.ID, todo.Description)
 	return err
 }
 
@@ -83,6 +57,7 @@ func (store *todoStorage) GetAll(ctx context.Context, createdBy uuid.UUID) ([]mo
 	if err != nil {
 		return nil, fmt.Errorf("error while querying all todos: %w", err)
 	}
+
 	defer rows.Close()
 
 	for rows.Next() {
@@ -100,15 +75,13 @@ func (store *todoStorage) GetAll(ctx context.Context, createdBy uuid.UUID) ([]mo
 
 	return res, nil
 }
-
 func (store *todoStorage) Update(ctx context.Context, todo *model.TodoDTO, id uuid.UUID) error {
-	_, err := store.pool.Exec(ctx, queryUpdate, todo.Name, todo.Description, todo.IsCompleted, id)
+	_, err := store.pool.Exec(ctx, queryUpdateTodo, todo.Name, todo.Description, todo.IsCompleted, id, todo.CreatedBy)
 	return err
 }
 
-func (store *todoStorage) DeleteTodos(ctx context.Context, id uuid.UUID) error {
-
-	commandTag, err := store.pool.Exec(ctx, queryDelete, id)
+func (store *todoStorage) Delete(ctx context.Context, id uuid.UUID) error {
+	commandTag, err := store.pool.Exec(ctx, queryDeleteTodo, id)
 	if err != nil {
 		return err
 	}

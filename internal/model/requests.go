@@ -39,20 +39,23 @@ type (
 		ProjectID   uuid.UUID `json:"project_id"`
 		Column      string    `json:"column"`
 	}
+	// TodoUpdateRequest :Updating TodoType Request from user
 	TodoUpdateRequest struct {
 		Name        string `json:"name"`
 		Description string `json:"description"`
 		IsCompleted bool   `json:"is_completed"`
 	}
-	// GroupRequest :Creating Group Invite Request
-	GroupRequest struct {
-		UserID    uuid.UUID `json:"user_id"`
-		ProjectID uuid.UUID `json:"project_id"`
-	}
+	// ColumRequest :Updating ColumnType Request from user
 	ColumRequest struct {
 		ProjectId uuid.UUID `json:"project_id"`
 		Name      string    `json:"name"`
 		Order     int       `json:"order"`
+	}
+	// ProjectRequest :Updating ProjectType Request from user
+	ProjectRequest struct {
+		ID        uuid.UUID `json:"id"`
+		Name      string    `json:"name"`
+		CreatedBy uuid.UUID `json:"created_by"`
 	}
 )
 

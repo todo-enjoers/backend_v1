@@ -16,32 +16,6 @@ import (
 // Checking whether the interface "TodoStorage" implements the structure "todoStorage"
 var _ storage.UserStorage = (*userStorage)(nil)
 
-// Users Query const
-const (
-	queryInsertInto = `INSERT INTO users (id, login, encrypted_password) VALUES ($1, $2, $3);`
-
-	queryGetByID = `SELECT u.id, u.login, u.encrypted_password
-FROM users AS u
-WHERE u.id = $1;`
-
-	queryUpdatePassword = `UPDATE users SET encrypted_password = $1 WHERE id = $2;`
-
-	queryGetByLogin = `SELECT u.id, u.login, u.encrypted_password
-FROM users AS u
-WHERE u.login = $1;`
-
-	queryMigrateUp = `CREATE TABLE IF NOT EXISTS users
-(
-    id UUID PRIMARY KEY NOT NULL UNIQUE ,
-    login VARCHAR NOT NULL UNIQUE ,
-    encrypted_password VARCHAR NOT NULL
-);
-CREATE UNIQUE INDEX IF NOT EXISTS users_login_idx ON users (login);`
-
-	queryGetAll = `SELECT u.id, u.login
-FROM users AS u;`
-)
-
 type userStorage struct {
 	pool  *pgxpool.Pool
 	log   *zap.Logger
@@ -61,7 +35,7 @@ func newUserStorage(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError) 
 }
 
 func (store *userStorage) migrate() error {
-	_, err := store.pool.Exec(context.Background(), queryMigrateUp)
+	_, err := store.pool.Exec(context.Background(), queryMigrateU)
 	return err
 }
 
@@ -101,7 +75,7 @@ func (store *userStorage) ChangePassword(ctx context.Context, password string, i
 
 func (store *userStorage) GetAll(ctx context.Context) ([]model.UserDTO, error) {
 	var res []model.UserDTO
-	rows, err := store.pool.Query(ctx, queryGetAll)
+	rows, err := store.pool.Query(ctx, queryGetAllUsers)
 	if err != nil {
 		return nil, fmt.Errorf("error while querying all users: %w", err)
 	}

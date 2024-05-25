@@ -89,7 +89,7 @@ func (ctrl *Controller) configureRoutes() {
 		columns := api.Group("/projects/")
 		{
 			columns.POST("columns/", ctrl.HandleCreateColumn)
-			columns.DELETE("/:id/:name", ctrl.HandleDeleteColumn)
+			columns.DELETE(":id/:name", ctrl.HandleDeleteColumn)
 			columns.PUT(":id/:name", ctrl.HandleUpdateColumn)
 			columns.GET(":id/:name", ctrl.HandleGetColumnByName)
 			columns.GET(":id/", ctrl.HandleGetAllColumn)

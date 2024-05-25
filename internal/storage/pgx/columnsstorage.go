@@ -46,7 +46,7 @@ func (store *columnStorage) DeleteColumn(ctx context.Context, name string, proje
 
 func (store *columnStorage) GetColumnByName(ctx context.Context, name string, projectId uuid.UUID) (*model.ColumDTO, error) {
 	var column model.ColumDTO
-	err := store.pool.QueryRow(ctx, queryGetColumnByName, name, projectId).Scan(&column.Name, &column.Order, &column.ProjectId)
+	err := store.pool.QueryRow(ctx, queryGetColumnByName, name, projectId).Scan(&column.ProjectId, &column.Name, &column.Order)
 	if err != nil {
 		return nil, err
 	}

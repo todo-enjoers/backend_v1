@@ -67,26 +67,26 @@ func (ctrl *Controller) configureRoutes() {
 		todos := api.Group("/todos")
 		{
 			todos.GET("/", ctrl.HandleGetAllTodos)
-			todos.GET("/{id}", ctrl.HandleGetTodosById)
+			todos.GET("/:id", ctrl.HandleGetTodosById)
 			todos.POST("/", ctrl.HandleCreateTodo)
-			todos.PUT("/{id}", ctrl.HandleChangeTodo)
-			todos.DELETE("/{id}", ctrl.HandleDeleteTodo)
+			todos.PUT("/:id", ctrl.HandleChangeTodo)
+			todos.DELETE("/:id", ctrl.HandleDeleteTodo)
 		}
 
 		projects := api.Group("/projects")
 		{
 			projects.POST("/create", ctrl.HandleCreateProject)
-			projects.DELETE("/delete/{id}", ctrl.HandleDeleteProject)
-			projects.POST("/update/{id}", ctrl.HandleUpdateProject)
+			projects.DELETE("/delete/:id", ctrl.HandleDeleteProject)
+			projects.PUT("/update/:id", ctrl.HandleUpdateProject)
 			projects.GET("/", ctrl.HandleGetMyProject)
 		}
-		columns := api.Group("/projects/")
+		columns := api.Group("/columns")
 		{
-			columns.POST("columns/", ctrl.HandleCreateColumn)
-			columns.DELETE(":id/:name", ctrl.HandleDeleteColumn)
-			columns.PUT(":id/:name", ctrl.HandleUpdateColumn)
-			columns.GET(":id/:name", ctrl.HandleGetColumnByName)
-			columns.GET(":id/", ctrl.HandleGetAllColumn)
+			columns.POST("/", ctrl.HandleCreateColumn)
+			columns.DELETE("/:id/:name", ctrl.HandleDeleteColumn)
+			columns.PUT("/:id/:name", ctrl.HandleUpdateColumn)
+			columns.GET("/:id/:name", ctrl.HandleGetColumnByName)
+			columns.GET("/:id/", ctrl.HandleGetAllColumn)
 		}
 	}
 }

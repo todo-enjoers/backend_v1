@@ -95,7 +95,7 @@ const (
 	queryInsertC         = `INSERT INTO project_columns (project_id, name, "order") VALUES ($1, $2, $3);`
 	queryDeleteC         = `DELETE FROM project_columns WHERE name = $1 and project_id = $2;`
 	queryGetColumnByName = `SELECT * FROM project_columns WHERE name = $1 and project_id = $2;`
-	queryUpdateColumns   = `UPDATE project_columns SET name = $1, "order" = $2 
-                       WHERE name = $3 and project_id = $4;`
+	queryUpdateColumns   = `UPDATE project_columns SET name = $1 
+                       WHERE name = $2 and project_id = $3;`
 	queryGetAllColumns = `SELECT * FROM project_columns WHERE project_id = $1;`
 )

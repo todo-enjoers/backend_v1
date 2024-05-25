@@ -10,23 +10,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	queryMigrateC = `CREATE TABLE IF NOT EXISTS project_columns
-(
-    "project_id" UUID NOT NULL,
-    "name" VARCHAR,
-    "order" INT,
-    PRIMARY KEY (project_id, name),
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-);`
-	queryInsertC         = `INSERT INTO project_columns (project_id, name, "order") VALUES ($1, $2, $3);`
-	queryDeleteC         = `DELETE FROM project_columns WHERE name = $1 and project_id = $2;`
-	queryGetColumnByName = `SELECT * FROM project_columns WHERE name = $1 and project_id = $2;`
-	queryUpdateColumns   = `UPDATE project_columns SET name = $1, "order" = $2 
-                       WHERE name = $3 and project_id = $4;`
-	queryGetAllColumns = `SELECT * FROM project_columns WHERE project_id = $1;`
-)
-
 type columnStorage struct {
 	pool  *pgxpool.Pool
 	log   *zap.Logger
@@ -34,10 +17,6 @@ type columnStorage struct {
 }
 
 func (store *columnStorage) migrate() (err error) {
-	_, err = store.pool.Exec(context.Background(), queryMigrateC)
-	if err != nil {
-		return err
-	}
 	_, err = store.pool.Exec(context.Background(), queryMigrateC)
 	if err != nil {
 		return err

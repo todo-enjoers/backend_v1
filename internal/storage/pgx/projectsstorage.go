@@ -13,29 +13,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	queryMigrateP = `CREATE TABLE IF NOT EXISTS projects
-(
-    "id" UUID NOT NULL UNIQUE,
-    "name" VARCHAR NOT NULL,
-    "created_by" UUID NOT NULL ,
-    PRIMARY KEY ("id"),
-    FOREIGN KEY ("created_by") REFERENCES users(id) ON DELETE CASCADE
-);`
-
-	queryGetByIDP = `SELECT p.id, p.name, p.created_by
-FROM projects AS p
-WHERE p.id = $1;`
-
-	queryGetMyProjects = `SELECT p.id, p.name, p.created_by 
-FROM projects AS p
-WHERE created_by = $1;`
-
-	queryCreateProjects = `INSERT INTO projects (id, name, created_by) VALUES ($1, $2, $3);`
-
-	queryUpdateName = `UPDATE projects SET name = $1 WHERE id = $2;`
-)
-
 // Checking whether the interface "GroupStorage" implements the structure "groupStorage"
 var _ storage.ProjectStorage = (*projectsStorage)(nil)
 
@@ -65,7 +42,7 @@ func (store *projectsStorage) migrate() (err error) {
 	return err
 }
 
-func (store *projectsStorage) CreateProject(ctx context.Context, project *model.ProjectsDTO) error {
+func (store *projectsStorage) Create(ctx context.Context, project *model.ProjectDTO) error {
 	_, err := store.pool.Exec(ctx, queryCreateProjects, project.ID, project.Name, project.CreatedBy)
 	if err != nil {
 		if errors.As(err, &store.pgErr) && (pgerrcode.UniqueViolation == store.pgErr.Code) {
@@ -76,8 +53,26 @@ func (store *projectsStorage) CreateProject(ctx context.Context, project *model.
 	return nil
 }
 
-func (store *projectsStorage) GetMyProjects(ctx context.Context, createdByID uuid.UUID) ([]model.ProjectsDTO, error) {
-	var projectsList []model.ProjectsDTO
+func (store *projectsStorage) GetMyByName(ctx context.Context, name string, createdBy uuid.UUID) error {
+	project := new(model.ProjectDTO)
+	err := store.pool.QueryRow(ctx, queryGetMyProjectsByName, name, createdBy).Scan(&project.ID, &project.Name, &project.CreatedBy)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (store *projectsStorage) GetByID(ctx context.Context, id uuid.UUID) (*model.ProjectDTO, error) {
+	project := new(model.ProjectDTO)
+	err := store.pool.QueryRow(ctx, queryGetProjectsByID, id).Scan(&project.ID, &project.Name, &project.CreatedBy)
+	if err != nil {
+		return nil, err
+	}
+	return project, nil
+}
+
+func (store *projectsStorage) GetMyProjects(ctx context.Context, createdByID uuid.UUID) ([]model.ProjectDTO, error) {
+	var projectsList []model.ProjectDTO
 	rows, err := store.pool.Query(ctx, queryGetMyProjects, createdByID)
 	if err != nil {
 		return nil, fmt.Errorf("error while querying my projects: %w", err)
@@ -86,7 +81,7 @@ func (store *projectsStorage) GetMyProjects(ctx context.Context, createdByID uui
 	defer rows.Close()
 
 	for rows.Next() {
-		var temp model.ProjectsDTO
+		var temp model.ProjectDTO
 		err = rows.Scan(&temp.ID, &temp.Name, &temp.CreatedBy)
 		if err != nil {
 			return nil, fmt.Errorf("error while scanning groups: %w", err)
@@ -101,11 +96,27 @@ func (store *projectsStorage) GetMyProjects(ctx context.Context, createdByID uui
 	return projectsList, nil
 }
 
-func (store *projectsStorage) UpdateProjectName(ctx context.Context, name string, id uuid.UUID) error {
-	_, err := store.pool.Exec(ctx, queryUpdateName, name, id)
-	return err
+func (store *projectsStorage) UpdateName(ctx context.Context, name string, id uuid.UUID) error {
+	if store.GetMyByName(ctx, name, id) != nil {
+		return storage.ErrAlreadyExists
+	}
+	commandTag, err := store.pool.Exec(ctx, queryUpdateProjectName, name, id)
+	if err != nil {
+		return err
+	}
+	if commandTag.RowsAffected() == 0 {
+		return storage.ErrNotFound
+	}
+	return nil
 }
 
-func (store *projectsStorage) DeleteProject(ctx context.Context, id uuid.UUID) error {
-
+func (store *projectsStorage) Delete(ctx context.Context, id uuid.UUID) error {
+	commandTag, err := store.pool.Exec(ctx, queryDeleteProject, id)
+	if err != nil {
+		return err
+	}
+	if commandTag.RowsAffected() == 0 {
+		return storage.ErrNotFound
+	}
+	return err
 }

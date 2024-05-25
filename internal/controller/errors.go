@@ -6,7 +6,7 @@ import (
 
 var (
 	// Unauthenticated error
-	//Unauthenticated = errors.New("unauthenticated")
+	Unauthenticated = errors.New("unauthenticated")
 
 	// Internal error
 	//Internal = errors.New("internal")

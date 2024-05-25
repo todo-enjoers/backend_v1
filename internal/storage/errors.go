@@ -7,16 +7,16 @@ var (
 	ErrAlreadyExists = errors.New("already in storage")
 
 	// ErrNoContent error
-	ErrNoContent = errors.New("no content")
+	//ErrNoContent = errors.New("no content")
 
 	// ErrIsDeleted error
-	ErrIsDeleted = errors.New("is deleted")
+	//ErrIsDeleted = errors.New("is deleted")
 
 	// ErrNotAccessible error
 	ErrNotAccessible = errors.New("not accessible")
 
 	// ErrAlreadyClosed error
-	ErrAlreadyClosed = errors.New("storage is already closed")
+	//ErrAlreadyClosed = errors.New("storage is already closed")
 
 	// ErrBadRegisterRequest error
 	ErrBadRegisterRequest = errors.New("wrong login or password. please try other")
@@ -25,7 +25,7 @@ var (
 	ErrCreateUser = errors.New("got error while creating user")
 
 	// ErrCreateGroup error
-	ErrCreateGroup = errors.New("got error while creating group")
+	//ErrCreateGroup = errors.New("got error while creating group")
 
 	// ErrCreateToken error
 	ErrCreateToken = errors.New("got error while creating token")

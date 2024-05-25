@@ -369,19 +369,206 @@ func (ctrl *Controller) HandleRefreshToken(c echo.Context) error {
 // ./api/projects
 
 func (ctrl *Controller) HandleCreateProject(c echo.Context) error {
-	
+	var request model.ProjectRequest
+	if err := c.Bind(&request); err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: controller.ErrBindingRequest.Error(),
+			},
+		)
+	}
+	userID, err := ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+
+	project := &model.ProjectDTO{
+		ID:        uuid.New(),
+		Name:      request.Name,
+		CreatedBy: userID,
+	}
+
+	err = ctrl.store.Project().Create(c.Request().Context(), project)
+	if errors.Is(err, storage.ErrAlreadyExists) {
+		ctrl.log.Error("project already exists", zap.Error(err))
+		return c.JSON(
+			http.StatusConflict,
+			model.ErrorResponse{
+				Error: storage.ErrAlreadyExists.Error(),
+			},
+		)
+	}
+	response := model.ProjectResponse{
+		ID:        project.ID,
+		Name:      project.Name,
+		CreatedBy: project.CreatedBy,
+	}
+	ctrl.log.Info("successfully created new project", zap.Any("project", response))
+	return c.JSON(http.StatusCreated, response)
 }
 
 func (ctrl *Controller) HandleDeleteProject(c echo.Context) error {
+	projectIDStr := c.Param("id")
+	projectID, err := uuid.Parse(projectIDStr)
+	if err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: storage.ErrBadRequestId.Error(),
+			},
+		)
+	}
 
+	_, err = ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+
+	err = ctrl.store.Project().Delete(c.Request().Context(), projectID)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return c.JSON(
+				http.StatusNotFound,
+				model.ErrorResponse{
+					Error: storage.ErrNotFound.Error(),
+				},
+			)
+		}
+		return c.JSON(
+			http.StatusInternalServerError,
+			model.ErrorResponse{
+				Error: err.Error(),
+			},
+		)
+	}
+
+	ctrl.log.Info("successfully deleted project", zap.String("id", projectID.String()))
+	return c.NoContent(http.StatusNoContent)
 }
 
 func (ctrl *Controller) HandleUpdateProject(c echo.Context) error {
+	var request model.ProjectRequest
 
+	user, err := ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.Unauthenticated.Error(),
+			},
+		)
+	}
+
+	projectIDStr := c.Param("id")
+	projectID, err := uuid.Parse(projectIDStr)
+	if err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: storage.ErrBadRequestId.Error(),
+			},
+		)
+	}
+
+	if err = c.Bind(&request); err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: storage.ErrBadRequestId.Error(),
+			},
+		)
+	}
+
+	gotProject, err := ctrl.store.Project().GetByID(c.Request().Context(), projectID)
+	if err != nil {
+		return c.JSON(
+			http.StatusNotFound,
+			model.ErrorResponse{
+				Error: err.Error(),
+			},
+		)
+	}
+
+	err = ctrl.store.Project().UpdateName(c.Request().Context(), request.Name, gotProject.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, storage.ErrNotFound):
+			{
+				return c.JSON(
+					http.StatusNotFound,
+					model.ErrorResponse{
+						Error: storage.ErrNotFound.Error(),
+					},
+				)
+			}
+		case errors.Is(err, storage.ErrAlreadyExists):
+			{
+				return c.JSON(
+					http.StatusConflict,
+					model.ErrorResponse{
+						Error: storage.ErrAlreadyExists.Error(),
+					},
+				)
+			}
+		case err != nil:
+			return c.JSON(
+				http.StatusInternalServerError,
+				model.ErrorResponse{
+					Error: storage.ErrInternalServer.Error(),
+				},
+			)
+		}
+	}
+
+	project := model.ProjectResponse{
+		ID:        gotProject.ID,
+		Name:      request.Name,
+		CreatedBy: user,
+	}
+
+	ctrl.log.Info("successfully updated project", zap.Any("project", project))
+	return c.JSON(http.StatusOK, project)
 }
 
 func (ctrl *Controller) HandleGetMyProject(c echo.Context) error {
+	var myProjects []model.ProjectDTO
 
+	userID, err := ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+
+	myProjects, err = ctrl.store.Project().GetMyProjects(c.Request().Context(), userID)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotAccessible) {
+			return c.JSON(
+				http.StatusNotFound, model.ErrorResponse{
+					Error: storage.ErrNotFound.Error(),
+				},
+			)
+		}
+		return err
+	}
+	return c.JSON(http.StatusOK, myProjects)
 }
 
 // ./api/todos
@@ -419,7 +606,7 @@ func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 
 	err = ctrl.store.Todo().Create(c.Request().Context(), todo)
 	if errors.Is(err, storage.ErrAlreadyExists) {
-		ctrl.log.Error("user already exists", zap.Error(err))
+		ctrl.log.Error("project already exists", zap.Error(err))
 		return c.JSON(
 			http.StatusConflict,
 			model.ErrorResponse{
@@ -447,7 +634,8 @@ func (ctrl *Controller) HandleGetTodosById(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, model.ErrorResponse{
 			Error: storage.ErrBadRequestId.Error(),
-		})
+		},
+		)
 	}
 	_, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
@@ -465,7 +653,8 @@ func (ctrl *Controller) HandleGetTodosById(c echo.Context) error {
 		if errors.Is(err, storage.ErrNotAccessible) {
 			return c.JSON(http.StatusNotFound, model.ErrorResponse{
 				Error: storage.ErrNotFound.Error(),
-			})
+			},
+			)
 		}
 		return err
 	}
@@ -576,7 +765,7 @@ func (ctrl *Controller) HandleDeleteTodo(c echo.Context) error {
 		)
 	}
 
-	err = ctrl.store.Todo().DeleteTodos(c.Request().Context(), todoID)
+	err = ctrl.store.Todo().Delete(c.Request().Context(), todoID)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			return c.JSON(

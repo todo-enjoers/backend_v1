@@ -26,13 +26,13 @@ type (
 		UserID    uuid.UUID `json:"user_id"`
 		ProjectID uuid.UUID `json:"project_id"`
 	}
-	// ProjectsDTO : Projects data transfer object
-	ProjectsDTO struct {
+	// ProjectDTO : Projects data transfer object
+	ProjectDTO struct {
 		ID        uuid.UUID `json:"id"`
 		Name      string    `json:"name"`
 		CreatedBy uuid.UUID `json:"created_by"`
 	}
-	// ColumnDTO : Column data transfer object
+	// ColumDTO : Column data transfer object
 	ColumDTO struct {
 		ProjectId uuid.UUID `json:"project_id"`
 		Name      string    `json:"name"`

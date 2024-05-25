@@ -369,19 +369,19 @@ func (ctrl *Controller) HandleRefreshToken(c echo.Context) error {
 // ./api/projects
 
 func (ctrl *Controller) HandleCreateProject(c echo.Context) error {
-	
+	return nil
 }
 
 func (ctrl *Controller) HandleDeleteProject(c echo.Context) error {
-
+	return nil
 }
 
 func (ctrl *Controller) HandleUpdateProject(c echo.Context) error {
-
+	return nil
 }
 
 func (ctrl *Controller) HandleGetMyProject(c echo.Context) error {
-
+	return nil
 }
 
 // ./api/todos

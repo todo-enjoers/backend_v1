@@ -566,6 +566,39 @@ func (ctrl *Controller) HandleGetMyProject(c echo.Context) error {
 	return c.JSON(http.StatusOK, myProjects)
 }
 
+func (ctrl *Controller) HandleGetMyProjectById(c echo.Context) error {
+	id := c.Param("id")
+	projectID, err := uuid.Parse(id)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, model.ErrorResponse{
+			Error: storage.ErrBadRequestId.Error(),
+		},
+		)
+	}
+	_, err = ctrl.getUserIDFromRequest(c.Request())
+	if err != nil {
+		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		return c.JSON(
+			http.StatusUnauthorized,
+			model.ErrorResponse{
+				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+	project, err := ctrl.store.Project().GetByID(c.Request().Context(), projectID)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotAccessible) {
+			return c.JSON(http.StatusNotFound, model.ErrorResponse{
+				Error: storage.ErrNotFound.Error(),
+			},
+			)
+		}
+		return err
+	}
+	return c.JSON(http.StatusOK, project)
+
+}
+
 // ./api/todos
 
 func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {

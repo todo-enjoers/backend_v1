@@ -37,8 +37,13 @@ func (store *todoStorage) migrateT() error {
 }
 
 func (store *todoStorage) Create(ctx context.Context, todo *model.TodoDTO) error {
-	_, err := store.pool.Exec(ctx, queryCreateTodo, todo.CreatedBy, todo.Name, todo.ID, todo.Description)
-	return err
+	_, err := store.pool.Exec(ctx, queryCreateTodo, todo.ID, todo.Name, todo.Description, todo.IsCompleted, todo.CreatedBy, todo.ProjectID, todo.Column)
+	if err != nil {
+		return err
+		fmt.Errorf("got err, when adding todo: %w", err)
+
+	}
+	return nil
 }
 
 func (store *todoStorage) GetByID(ctx context.Context, id uuid.UUID) (*model.TodoDTO, error) {
@@ -62,7 +67,7 @@ func (store *todoStorage) GetAll(ctx context.Context, createdBy uuid.UUID) ([]mo
 
 	for rows.Next() {
 		var temp model.TodoDTO
-		err = rows.Scan(&temp.Name, &temp.ID, &temp.Description, &temp.IsCompleted)
+		err = rows.Scan(&temp.ID, &temp.Name, &temp.Description, &temp.IsCompleted, &temp.CreatedBy, &temp.ProjectID, &temp.Column)
 		if err != nil {
 			return nil, fmt.Errorf("error while scanning todos: %w", err)
 		}
@@ -76,7 +81,7 @@ func (store *todoStorage) GetAll(ctx context.Context, createdBy uuid.UUID) ([]mo
 	return res, nil
 }
 func (store *todoStorage) Update(ctx context.Context, todo *model.TodoDTO, id uuid.UUID) error {
-	_, err := store.pool.Exec(ctx, queryUpdateTodo, todo.Name, todo.Description, todo.IsCompleted, id, todo.CreatedBy)
+	_, err := store.pool.Exec(ctx, queryUpdateTodo, todo.Name, todo.Description, todo.IsCompleted, id)
 	return err
 }
 

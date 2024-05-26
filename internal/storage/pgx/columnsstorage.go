@@ -53,7 +53,7 @@ func (store *columnStorage) GetColumnByName(ctx context.Context, name string, pr
 	return &column, nil
 }
 func (store *columnStorage) UpdateColumn(ctx context.Context, column *model.ColumDTO, name string, projectId uuid.UUID) error {
-	_, err := store.pool.Exec(ctx, queryUpdateColumns, column, name, projectId)
+	_, err := store.pool.Exec(ctx, queryUpdateColumns, column.Name, name, projectId)
 	return err
 }
 func (store *columnStorage) GetAllColumns(ctx context.Context, projectId uuid.UUID) ([]model.ColumDTO, error) {

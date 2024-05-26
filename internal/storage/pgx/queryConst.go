@@ -25,7 +25,8 @@ WHERE name = $1 and created_by = $2;`
 
 	queryCreateProjects = `INSERT INTO projects (id, name, created_by) VALUES ($1, $2, $3);`
 
-	queryUpdateProjectName = `UPDATE projects SET name = $1 WHERE id = $2;`
+	queryUpdateProjectName = `UPDATE projects SET name = $1
+ WHERE id = $2;`
 
 	queryDeleteProject = `DELETE FROM projects WHERE id = $1;`
 )
@@ -46,14 +47,13 @@ const (
 
 CREATE INDEX IF NOT EXISTS todos_created_by_index ON todos(created_by);
 `
-	queryCreateTodo  = `INSERT INTO todos (id, name, description, created_by, project_id, "column" )VALUES ($1, $2, $3, $4, $5, $6)`
-	queryTodoGetByID = `SELECT created_by, name, id, description FROM todos WHERE id = $1`
-	queryGetAllTodos = `SELECT t.id, t.name, t.description, t.is_completed, t.project_id
-FROM todos AS t ;`
-	queryUpdateTodo = `UPDATE todos
+	queryCreateTodo  = `INSERT INTO todos (id, name, description, is_completed, created_by, project_id, "column" )VALUES ($1, $2, $3, $4, $5, $6, $7)`
+	queryTodoGetByID = `SELECT id, name, description, is_completed, created_by, project_id, "column" FROM todos WHERE id = $1`
+	queryGetAllTodos = `SELECT * FROM todos WHERE created_by = $1;`
+	queryUpdateTodo  = `UPDATE todos
 		SET name = $1, description = $2, is_completed = $3
-		WHERE id = $4 AND created_by = $5 and project_id = $6`
-	queryDeleteTodo = `DELETE FROM todos WHERE id = $1 and created_by = $2 and "column" = $3`
+		WHERE id = $4`
+	queryDeleteTodo = `DELETE FROM todos WHERE id = $1`
 )
 
 // query for Users Storage

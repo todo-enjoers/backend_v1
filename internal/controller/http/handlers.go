@@ -462,7 +462,7 @@ func (ctrl *Controller) HandleDeleteProject(c echo.Context) error {
 func (ctrl *Controller) HandleUpdateProject(c echo.Context) error {
 	var request model.ProjectRequest
 
-	user, err := ctrl.getUserIDFromRequest(c.Request())
+	_, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		return c.JSON(
 			http.StatusUnauthorized,
@@ -501,8 +501,9 @@ func (ctrl *Controller) HandleUpdateProject(c echo.Context) error {
 			},
 		)
 	}
+	gotProject.Name = request.Name
 
-	err = ctrl.store.Project().UpdateName(c.Request().Context(), request.Name, gotProject.ID)
+	err = ctrl.store.Project().UpdateName(c.Request().Context(), request.Name, projectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, storage.ErrNotFound):
@@ -533,14 +534,8 @@ func (ctrl *Controller) HandleUpdateProject(c echo.Context) error {
 		}
 	}
 
-	project := model.ProjectResponse{
-		ID:        gotProject.ID,
-		Name:      request.Name,
-		CreatedBy: user,
-	}
-
-	ctrl.log.Info("successfully updated project", zap.Any("project", project))
-	return c.JSON(http.StatusOK, project)
+	ctrl.log.Info("successfully updated project", zap.Any("project", gotProject))
+	return c.JSON(http.StatusOK, gotProject)
 }
 
 func (ctrl *Controller) HandleGetMyProject(c echo.Context) error {
@@ -728,7 +723,7 @@ func (ctrl *Controller) HandleChangeTodo(c echo.Context) error {
 	todo.IsCompleted = request.IsCompleted
 
 	//work with db
-	err = ctrl.store.Todo().Update(c.Request().Context(), todo, user)
+	err = ctrl.store.Todo().Update(c.Request().Context(), todo, todoID)
 	if err != nil {
 		return c.JSON(
 			http.StatusInternalServerError,
@@ -997,7 +992,6 @@ func (ctrl *Controller) HandleUpdateColumn(c echo.Context) error {
 		)
 	}
 	column.Name = request.Name
-	column.Order = request.Order
 	err = ctrl.store.Column().UpdateColumn(c.Request().Context(), column, columnName, projectUUID)
 	if err != nil {
 		return c.JSON(
@@ -1008,7 +1002,7 @@ func (ctrl *Controller) HandleUpdateColumn(c echo.Context) error {
 		)
 	}
 
-	ctrl.log.Info("successfully updated todo", zap.Any("todo", column))
+	ctrl.log.Info("successfully updated column", zap.Any("todo", column))
 	return c.JSON(http.StatusOK, column)
 }
 

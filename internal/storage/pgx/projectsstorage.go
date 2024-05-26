@@ -97,9 +97,7 @@ func (store *projectsStorage) GetMyProjects(ctx context.Context, createdByID uui
 }
 
 func (store *projectsStorage) UpdateName(ctx context.Context, name string, id uuid.UUID) error {
-	if store.GetMyByName(ctx, name, id) != nil {
-		return storage.ErrAlreadyExists
-	}
+
 	commandTag, err := store.pool.Exec(ctx, queryUpdateProjectName, name, id)
 	if err != nil {
 		return err

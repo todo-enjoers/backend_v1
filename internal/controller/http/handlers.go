@@ -692,7 +692,7 @@ func (ctrl *Controller) HandleGetTodosById(c echo.Context) error {
 func (ctrl *Controller) HandleChangeTodo(c echo.Context) error {
 	var request model.TodoUpdateRequest
 	// get user id
-	user, err := ctrl.getUserIDFromRequest(c.Request())
+	_, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		return c.JSON(
 			http.StatusUnauthorized,
@@ -741,15 +741,7 @@ func (ctrl *Controller) HandleChangeTodo(c echo.Context) error {
 			},
 		)
 	}
-	//checking
-	if todo.CreatedBy != user {
-		return c.JSON(
-			http.StatusForbidden,
-			model.ErrorResponse{
-				Error: storage.ErrForbidden.Error(),
-			},
-		)
-	}
+
 	//change todos
 	todo.Name = request.Name
 	todo.Description = request.Description
@@ -767,7 +759,7 @@ func (ctrl *Controller) HandleChangeTodo(c echo.Context) error {
 	}
 
 	ctrl.log.Info("successfully updated todo", zap.Any("todo", todo))
-	return c.JSON(http.StatusOK, todo)
+	return c.JSON(http.StatusCreated, todo)
 }
 
 func (ctrl *Controller) HandleDeleteTodo(c echo.Context) error {
@@ -1036,7 +1028,7 @@ func (ctrl *Controller) HandleUpdateColumn(c echo.Context) error {
 	}
 
 	ctrl.log.Info("successfully updated column", zap.Any("todo", column))
-	return c.JSON(http.StatusOK, column)
+	return c.JSON(http.StatusCreated, column)
 }
 
 func (ctrl *Controller) HandleGetAllColumn(c echo.Context) error {

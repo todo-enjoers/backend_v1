@@ -161,7 +161,7 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 	var request model.UserChangePasswordRequest
 
 	// Validate user with Token returning id
-	id, err := ctrl.getUserIDFromRequest(c.Request())
+	userID, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(
@@ -171,7 +171,7 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 			},
 		)
 	}
-	ctrl.log.Info("HandleChangePassword : logged in", zap.String("user_id", id.String()))
+	ctrl.log.Info("HandleChangePassword : logged in", zap.String("user_id", userID.String()))
 
 	// Binding request
 	if err = c.Bind(&request); err != nil {
@@ -185,7 +185,7 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 	}
 
 	// Getting the "User" from DB
-	user, err := ctrl.store.User().GetByID(c.Request().Context(), id)
+	user, err := ctrl.store.User().GetByID(c.Request().Context(), userID)
 	if err != nil {
 		ctrl.log.Error("error while getting user by login from DB", zap.Error(err))
 		return c.JSON(
@@ -214,7 +214,7 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 		return c.JSON(
 			http.StatusNotAcceptable,
 			model.ErrorResponse{
-				Error: controller.ErrPasswordAreNotEqual.Error(), // StatusConflict or what?
+				Error: controller.ErrPasswordAreNotEqual.Error(),
 			},
 		)
 	}
@@ -253,7 +253,7 @@ func (ctrl *Controller) HandleGetMe(c echo.Context) error {
 		requestUserID uuid.UUID
 	)
 
-	// Taking a UserID from request
+	// Taking a userID from request
 	requestUserID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
@@ -289,7 +289,7 @@ func (ctrl *Controller) HandleGetMe(c echo.Context) error {
 func (ctrl *Controller) HandleGetAll(c echo.Context) error {
 	var list []model.UserDTO
 
-	// Taking a UserID from request
+	// Taking a userID from request
 	requestUserID, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
@@ -334,7 +334,7 @@ func (ctrl *Controller) HandleRefreshToken(c echo.Context) error {
 		)
 	}
 
-	// Taking a UserID from request
+	// Taking a userID from request
 	requestUserID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
@@ -811,11 +811,11 @@ func (ctrl *Controller) HandleGetAllTodos(c echo.Context) error {
 	var (
 		listTodos []model.TodoDTO
 		err       error
-		UserID    uuid.UUID
+		userID    uuid.UUID
 	)
 
-	// Taking a UserID from request
-	UserID, err = ctrl.getUserIDFromRequest(c.Request())
+	// Taking a userID from request
+	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(
@@ -825,22 +825,9 @@ func (ctrl *Controller) HandleGetAllTodos(c echo.Context) error {
 			},
 		)
 	}
-	ctrl.log.Info("HandleGetAll: logged in", zap.String("user_id", UserID.String()))
+	ctrl.log.Info("HandleGetAllTodos: got user id", zap.String("user_id", userID.String()))
 
-	// Taking a UserID from request
-	UserID, err = ctrl.getUserIDFromRequest(c.Request())
-	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
-		return c.JSON(
-			http.StatusUnauthorized,
-			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
-			},
-		)
-	}
-	ctrl.log.Info("HandleGetAllTodos: got user id", zap.String("user_id", UserID.String()))
-
-	listTodos, err = ctrl.store.Todo().GetAll(c.Request().Context(), UserID)
+	listTodos, err = ctrl.store.Todo().GetAll(c.Request().Context(), userID)
 	if err != nil {
 		ctrl.log.Error("error while getting todos by id from DB", zap.Error(err))
 		return c.JSON(
@@ -866,6 +853,8 @@ func (ctrl *Controller) HandleCreateColumn(c echo.Context) error {
 			},
 		)
 	}
+
+	// Taking a userID from request
 	_, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
@@ -1043,11 +1032,11 @@ func (ctrl *Controller) HandleGetAllColumn(c echo.Context) error {
 	}
 	var (
 		listColumns []model.ColumDTO
-		UserID      uuid.UUID
+		userID      uuid.UUID
 	)
 
-	// Taking a UserID from request
-	UserID, err = ctrl.getUserIDFromRequest(c.Request())
+	// Taking a userID from request
+	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(
@@ -1057,7 +1046,7 @@ func (ctrl *Controller) HandleGetAllColumn(c echo.Context) error {
 			},
 		)
 	}
-	ctrl.log.Info("HandleGetAll: logged in", zap.String("user_id", UserID.String()))
+	ctrl.log.Info("HandleGetAll: logged in", zap.String("user_id", userID.String()))
 
 	listColumns, err = ctrl.store.Column().GetAllColumns(c.Request().Context(), projectUUID)
 	if err != nil {

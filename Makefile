@@ -34,7 +34,7 @@ database-up: docker-run docker-compose
 docker-run:
 	@service docker run
 docker-compose:
-	2docker compose -f infra/postgres.yaml up -d
+	@docker compose -f infra/postgres.yaml up -d
 
 .PHONY: run
 run:

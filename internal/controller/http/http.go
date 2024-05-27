@@ -11,6 +11,7 @@ import (
 	"github.com/todo-enjoers/backend_v1/internal/pkg/token"
 	"github.com/todo-enjoers/backend_v1/internal/storage"
 	"go.uber.org/zap"
+	"net/http"
 )
 
 // Checking whether the interface "Controller" implements the structure "Controller"
@@ -108,6 +109,10 @@ func (ctrl *Controller) configureMiddlewares() {
 			LogRequestID:  true,
 			LogMethod:     true,
 			LogURI:        true,
+		}),
+		middleware.CORSWithConfig(middleware.CORSConfig{
+			AllowOrigins: []string{"*"},
+			AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 		}),
 	}
 	ctrl.server.Use(middlewares...)

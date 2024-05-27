@@ -10,6 +10,6 @@
 *.o
 
 go.work
-.idea
+.idea/
 certs/
 .idea/

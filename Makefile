@@ -3,12 +3,12 @@ help:
 	@echo "Welcome to helper of Makefile!"
 	@echo "Use 'make <target>' where <target> is one of:"
 	@echo
-	@echo "  all    		run: build -> run-prepare -> run "
+	@echo "  all    		run: build -> run-prepare -> run"
 	@echo "  build			building a binary file of project"
-	@echo "  run-prepare	run: key-generation -> database-up"
-	@echo "  key-generation creating a couples of keys in secret directory"
-	@echo "  database-up	rise up a database with docker files"
-	@echo "  run			run "
+	@echo "  run-prepare		run: key-generation -> database-up"
+	@echo "  key-generation 	creating a couples of keys in secret directory"
+	@echo "  database-up		rise up a database with docker files"
+	@echo "  run			run"
 	@echo ""
 	@echo "You should run <all> to fully build and run the project"
 

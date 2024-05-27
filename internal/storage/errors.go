@@ -31,7 +31,7 @@ var (
 	ErrCreateToken = errors.New("got error while creating token")
 
 	// ErrGetByLogin error
-	ErrGetByLogin = errors.New("got error while getting by login")
+	ErrGetByLogin = errors.New("the user was not found")
 
 	// ErrGetByID error
 	ErrGetByID = errors.New("got error while getting by id")

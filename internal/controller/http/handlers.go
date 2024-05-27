@@ -42,7 +42,7 @@ func (ctrl *Controller) HandleRegister(c echo.Context) error {
 	HashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return c.JSON(
-			http.StatusBadRequest,
+			http.StatusInternalServerError,
 			model.ErrorResponse{
 				Error: storage.ErrHashingPassword.Error(),
 			},
@@ -119,7 +119,7 @@ func (ctrl *Controller) HandleLogin(c echo.Context) error {
 	if err != nil {
 		ctrl.log.Error("error while getting user by login from DB", zap.Error(err))
 		return c.JSON(
-			http.StatusUnauthorized,
+			http.StatusNoContent,
 			model.ErrorResponse{
 				Error: storage.ErrGetByLogin.Error(),
 			},
@@ -130,7 +130,7 @@ func (ctrl *Controller) HandleLogin(c echo.Context) error {
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password)); err != nil {
 		ctrl.log.Error("invalid password", zap.Error(controller.InvalidPassword))
 		return c.JSON(
-			http.StatusUnauthorized,
+			http.StatusBadRequest,
 			model.ErrorResponse{
 				Error: storage.ErrComparingPasswords.Error(),
 			},

@@ -37,4 +37,7 @@ var (
 
 	// ErrBindingRequest error
 	ErrBindingRequest = errors.New("could not bind request")
+
+	// ErrNoContent error
+	ErrNoContent = errors.New("no content found in db")
 )

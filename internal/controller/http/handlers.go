@@ -535,7 +535,7 @@ func (ctrl *Controller) HandleUpdateProject(c echo.Context) error {
 	}
 
 	ctrl.log.Info("successfully updated project", zap.Any("project", gotProject))
-	return c.JSON(http.StatusOK, gotProject)
+	return c.JSON(http.StatusCreated, gotProject)
 }
 
 func (ctrl *Controller) HandleGetMyProject(c echo.Context) error {
@@ -556,8 +556,8 @@ func (ctrl *Controller) HandleGetMyProject(c echo.Context) error {
 	if err != nil {
 		if errors.Is(err, storage.ErrNotAccessible) {
 			return c.JSON(
-				http.StatusNotFound, model.ErrorResponse{
-					Error: storage.ErrNotFound.Error(),
+				http.StatusNoContent, model.ErrorResponse{
+					Error: controller.ErrNoContent.Error(),
 				},
 			)
 		}

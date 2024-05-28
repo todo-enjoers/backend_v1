@@ -36,7 +36,10 @@ func newUserStorage(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError) 
 
 func (store *userStorage) migrate() error {
 	_, err := store.pool.Exec(context.Background(), queryMigrateU)
-	return err
+	if err != nil {
+		return storage.ErrTableMigrations
+	}
+	return nil
 }
 
 func (store *userStorage) Create(ctx context.Context, user *model.UserDTO) error {

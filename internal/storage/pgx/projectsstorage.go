@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// Checking whether the interface "GroupStorage" implements the structure "groupStorage"
+// Checking whether the interface "ProjectStorage" implements the structure "projectsStorage"
 var _ storage.ProjectStorage = (*projectsStorage)(nil)
 
 type projectsStorage struct {
@@ -37,9 +37,9 @@ func newProjectsStorage(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgErr
 func (store *projectsStorage) migrate() (err error) {
 	_, err = store.pool.Exec(context.Background(), queryMigrateP)
 	if err != nil {
-		return err
+		return storage.ErrTableMigrations
 	}
-	return err
+	return nil
 }
 
 func (store *projectsStorage) Create(ctx context.Context, project *model.ProjectDTO) error {
@@ -97,7 +97,6 @@ func (store *projectsStorage) GetMyProjects(ctx context.Context, createdByID uui
 }
 
 func (store *projectsStorage) UpdateName(ctx context.Context, name string, id uuid.UUID) error {
-
 	commandTag, err := store.pool.Exec(ctx, queryUpdateProjectName, name, id)
 	if err != nil {
 		return err

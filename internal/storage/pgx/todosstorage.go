@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Checking whether the interface "TodoStorage" implements the structure "todoStorage"
 var _ storage.TodoStorage = (*todoStorage)(nil)
 
 type todoStorage struct {
@@ -35,7 +36,10 @@ func newTodoStorage(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError) 
 
 func (store *todoStorage) migrateT() error {
 	_, err := store.pool.Exec(context.Background(), queryMigrateT)
-	return err
+	if err != nil {
+		return storage.ErrTableMigrations
+	}
+	return nil
 }
 
 func (store *todoStorage) Create(ctx context.Context, todo *model.TodoDTO) error {

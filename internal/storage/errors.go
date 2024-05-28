@@ -41,4 +41,7 @@ var (
 
 	//ErrInternalServer error
 	ErrInternalServer = errors.New("failed to retrieve todo")
+
+	//ErrTableMigrations error
+	ErrTableMigrations = errors.New("migrations failed")
 )

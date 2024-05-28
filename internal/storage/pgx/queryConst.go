@@ -11,19 +11,19 @@ const (
     FOREIGN KEY ("created_by") REFERENCES users(id) ON DELETE CASCADE
 );`
 
-	queryGetMyProjects = `SELECT p.id, p.name, p.created_by 
+	queryCreateProjects = `INSERT INTO projects (id, name, created_by) VALUES ($1, $2, $3);`
+
+	queryGetMyProjectsByName = `SELECT p.id, p.name, p.created_by
 FROM projects AS p
-WHERE created_by = $1;`
+WHERE name = $1 and created_by = $2;`
 
 	queryGetProjectsByID = `SELECT p.id, p.name, p.created_by
 FROM projects AS p
 WHERE p.id = $1;`
 
-	queryGetMyProjectsByName = `SELECT p.id, p.name, p.created_by 
+	queryGetMyProjects = `SELECT p.id, p.name, p.created_by 
 FROM projects AS p
-WHERE name = $1 and created_by = $2;`
-
-	queryCreateProjects = `INSERT INTO projects (id, name, created_by) VALUES ($1, $2, $3);`
+WHERE created_by = $1;`
 
 	queryUpdateProjectName = `UPDATE projects SET name = $1
  WHERE id = $2;`
@@ -84,7 +84,7 @@ FROM users AS u;`
 
 // query for Columns Storage
 const (
-	queryMigrateC = `CREATE TABLE IF NOT EXISTS project_columns
+	queryMigrateColumnsTable = `CREATE TABLE IF NOT EXISTS project_columns
 (
     "project_id" UUID NOT NULL,
     "name" VARCHAR,
@@ -92,10 +92,15 @@ const (
     PRIMARY KEY (project_id, name),
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 );`
-	queryInsertC         = `INSERT INTO project_columns (project_id, name, "order") VALUES ($1, $2, $3);`
-	queryDeleteC         = `DELETE FROM project_columns WHERE name = $1 and project_id = $2;`
+
+	queryInsertColumns = `INSERT INTO project_columns (project_id, name, "order") VALUES ($1, $2, $3);`
+
+	queryDeleteColumns = `DELETE FROM project_columns WHERE name = $1 and project_id = $2;`
+
 	queryGetColumnByName = `SELECT * FROM project_columns WHERE name = $1 and project_id = $2;`
-	queryUpdateColumns   = `UPDATE project_columns SET name = $1 
-                       WHERE name = $2 and project_id = $3;`
+
+	queryUpdateColumns = `UPDATE project_columns SET name = $1 
+WHERE name = $2 and project_id = $3;`
+
 	queryGetAllColumns = `SELECT * FROM project_columns WHERE project_id = $1;`
 )

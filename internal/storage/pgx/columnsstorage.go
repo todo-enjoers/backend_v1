@@ -7,8 +7,12 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/todo-enjoers/backend_v1/internal/model"
+	"github.com/todo-enjoers/backend_v1/internal/storage"
 	"go.uber.org/zap"
 )
+
+// Checking whether the interface "ColumnStorage" implements the structure "columnStorage"
+var _ storage.ColumnStorage = (*columnStorage)(nil)
 
 type columnStorage struct {
 	pool  *pgxpool.Pool
@@ -16,13 +20,6 @@ type columnStorage struct {
 	pgErr *pgconn.PgError
 }
 
-func (store *columnStorage) migrate() (err error) {
-	_, err = store.pool.Exec(context.Background(), queryMigrateC)
-	if err != nil {
-		return err
-	}
-	return err
-}
 func newColumnStorage(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError) (*columnStorage, error) {
 	store := &columnStorage{
 		pool:  pool,
@@ -35,12 +32,20 @@ func newColumnStorage(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError
 	return store, nil
 }
 
+func (store *columnStorage) migrate() (err error) {
+	_, err = store.pool.Exec(context.Background(), queryMigrateColumnsTable)
+	if err != nil {
+		return storage.ErrTableMigrations
+	}
+	return nil
+}
+
 func (store *columnStorage) CreateColumn(ctx context.Context, column *model.ColumDTO) error {
-	_, err := store.pool.Exec(ctx, queryInsertC, column.ProjectId, column.Name, column.Order)
+	_, err := store.pool.Exec(ctx, queryInsertColumns, column.ProjectId, column.Name, column.Order)
 	return err
 }
 func (store *columnStorage) DeleteColumn(ctx context.Context, name string, projectId uuid.UUID) error {
-	_, err := store.pool.Exec(ctx, queryDeleteC, name, projectId)
+	_, err := store.pool.Exec(ctx, queryDeleteColumns, name, projectId)
 	return err
 }
 

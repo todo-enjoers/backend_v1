@@ -957,10 +957,10 @@ func (ctrl *Controller) HandleCreateColumn(c echo.Context) error {
 			},
 		)
 	}
-	response := model.ColumRequest{
-		ProjectId: request.ProjectId,
-		Name:      request.Name,
-		Order:     request.Order,
+	response := model.ColumResponse{
+		ProjectId: column.ProjectId,
+		Name:      column.Name,
+		Order:     column.Order,
 	}
 	ctrl.log.Info("successfully created new todo", zap.Any("todo", response))
 	return c.JSON(http.StatusCreated, response)

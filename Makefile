@@ -5,12 +5,15 @@ help:
 	@echo
 	@echo "  all    		run: build -> run-prepare -> run"
 	@echo "  build			building a binary file of project"
-	@echo "  run-prepare		run: key-generation -> database-up"
+	@echo "  run-prepare		run: key-generation"
 	@echo "  key-generation 	creating a couples of keys in secret directory"
-	@echo "  database-up		rise up a database with docker files"
+#	@echo "  database-up		rise up a database with docker files"
 	@echo "  run			run"
 	@echo ""
 	@echo "You should run <all> to fully build and run the project"
+	@echo "To start a db connection use:"
+	@echo "	1. service docker run"
+	@echo "	2. docker compose -f ./infra/postgres.yaml up -d"
 
 .PHONY: all
 all: build run-prepare run
@@ -20,7 +23,7 @@ build:
 	@go build --o server.o ./cmd/server/
 
 .PHONY: run-prepare
-run-prepare: key-generation database-up
+run-prepare: key-generation
 
 key-generation: creating-dir gen-pub-key gen-pri-key
 creating-dir:
@@ -30,11 +33,12 @@ gen-pub-key:
 gen-pri-key:
 	@openssl rsa -in certs/private.pem -outform PEM -pubout -out certs/public.pem
 
-database-up: docker-run docker-compose
-docker-run:
-	@service docker run
-docker-compose:
-	@docker compose -f infra/postgres.yaml up -d
+#database-up: docker-run docker-compose
+#docker-run:
+#	@service docker run
+#docker-compose:
+#	@docker compose -f ./infra/postgres.yaml up -d $(c)
+#
 
 .PHONY: run
 run:

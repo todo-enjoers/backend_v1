@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/todo-enjoers/backend_v1/internal/model"
+	"github.com/todo-enjoers/backend_v1/internal/pkg/errors"
 	"github.com/todo-enjoers/backend_v1/internal/storage"
 	"go.uber.org/zap"
 )
@@ -35,7 +36,7 @@ func newColumnStorage(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError
 func (store *columnStorage) migrate() (err error) {
 	_, err = store.pool.Exec(context.Background(), queryMigrateColumnsTable)
 	if err != nil {
-		return storage.ErrTableMigrations
+		return errors.ErrTableMigrations
 	}
 	return nil
 }

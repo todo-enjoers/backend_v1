@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/todo-enjoers/backend_v1/internal/model"
+	errors2 "github.com/todo-enjoers/backend_v1/internal/pkg/errors"
 	"github.com/todo-enjoers/backend_v1/internal/storage"
 	"go.uber.org/zap"
 )
@@ -37,7 +38,7 @@ func newProjectsStorage(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgErr
 func (store *projectsStorage) migrate() (err error) {
 	_, err = store.pool.Exec(context.Background(), queryMigrateP)
 	if err != nil {
-		return storage.ErrTableMigrations
+		return errors2.ErrTableMigrations
 	}
 	return nil
 }
@@ -46,9 +47,9 @@ func (store *projectsStorage) Create(ctx context.Context, project *model.Project
 	_, err := store.pool.Exec(ctx, queryCreateProjects, project.ID, project.Name, project.CreatedBy)
 	if err != nil {
 		if errors.As(err, &store.pgErr) && (pgerrcode.UniqueViolation == store.pgErr.Code) {
-			return storage.ErrAlreadyExists
+			return errors2.ErrAlreadyExists
 		}
-		return storage.ErrInserting
+		return errors2.ErrInserting
 	}
 	return nil
 }
@@ -102,7 +103,7 @@ func (store *projectsStorage) UpdateName(ctx context.Context, name string, id uu
 		return err
 	}
 	if commandTag.RowsAffected() == 0 {
-		return storage.ErrNotFound
+		return errors2.ErrNotFound
 	}
 	return nil
 }
@@ -113,7 +114,7 @@ func (store *projectsStorage) Delete(ctx context.Context, id uuid.UUID) error {
 		return err
 	}
 	if commandTag.RowsAffected() == 0 {
-		return storage.ErrNotFound
+		return errors2.ErrNotFound
 	}
 	return err
 }

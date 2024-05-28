@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/todo-enjoers/backend_v1/internal/model"
+	errors2 "github.com/todo-enjoers/backend_v1/internal/pkg/errors"
 	"github.com/todo-enjoers/backend_v1/internal/storage"
 	"go.uber.org/zap"
 )
@@ -37,7 +38,7 @@ func newUserStorage(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError) 
 func (store *userStorage) migrate() error {
 	_, err := store.pool.Exec(context.Background(), queryMigrateU)
 	if err != nil {
-		return storage.ErrTableMigrations
+		return errors2.ErrTableMigrations
 	}
 	return nil
 }
@@ -46,9 +47,9 @@ func (store *userStorage) Create(ctx context.Context, user *model.UserDTO) error
 	_, err := store.pool.Exec(ctx, queryInsertInto, user.ID, user.Login, user.Password)
 	if err != nil {
 		if errors.As(err, &store.pgErr) && pgerrcode.UniqueViolation == store.pgErr.Code {
-			return storage.ErrAlreadyExists
+			return errors2.ErrAlreadyExists
 		}
-		return storage.ErrInserting
+		return errors2.ErrInserting
 	}
 	return nil
 }
@@ -57,7 +58,7 @@ func (store *userStorage) GetByID(ctx context.Context, id uuid.UUID) (*model.Use
 	u := new(model.UserDTO)
 	err := store.pool.QueryRow(ctx, queryGetByID, id).Scan(&u.ID, &u.Login, &u.Password)
 	if err != nil {
-		return nil, storage.ErrGetByID
+		return nil, errors2.ErrGetByID
 	}
 	return u, nil
 }
@@ -66,7 +67,7 @@ func (store *userStorage) GetByLogin(ctx context.Context, login string) (*model.
 	u := new(model.UserDTO)
 	err := store.pool.QueryRow(ctx, queryGetByLogin, login).Scan(&u.ID, &u.Login, &u.Password)
 	if err != nil {
-		return nil, storage.ErrGetByLogin
+		return nil, errors2.ErrGetByLogin
 	}
 	return u, nil
 }

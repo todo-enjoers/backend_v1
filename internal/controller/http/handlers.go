@@ -4,9 +4,8 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/todo-enjoers/backend_v1/internal/controller"
 	"github.com/todo-enjoers/backend_v1/internal/model"
-	"github.com/todo-enjoers/backend_v1/internal/storage"
+	errPkg "github.com/todo-enjoers/backend_v1/internal/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
@@ -22,7 +21,7 @@ func (ctrl *Controller) HandleRegister(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: controller.ErrBindingRequest.Error(),
+				Error: errPkg.ErrBindingRequest.Error(),
 			},
 		)
 	}
@@ -33,7 +32,7 @@ func (ctrl *Controller) HandleRegister(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: storage.ErrBadRegisterRequest.Error(),
+				Error: errPkg.ErrBadRegisterRequest.Error(),
 			},
 		)
 	}
@@ -44,7 +43,7 @@ func (ctrl *Controller) HandleRegister(c echo.Context) error {
 		return c.JSON(
 			http.StatusInternalServerError,
 			model.ErrorResponse{
-				Error: storage.ErrHashingPassword.Error(),
+				Error: errPkg.ErrHashingPassword.Error(),
 			},
 		)
 	}
@@ -60,12 +59,12 @@ func (ctrl *Controller) HandleRegister(c echo.Context) error {
 	// Inserting in DB the user
 	err = ctrl.store.User().Create(c.Request().Context(), user)
 	if err != nil {
-		if errors.Is(err, storage.ErrAlreadyExists) {
+		if errors.Is(err, errPkg.ErrAlreadyExists) {
 			ctrl.log.Error("user already exists", zap.Error(err))
 			return c.JSON(
 				http.StatusConflict,
 				model.ErrorResponse{
-					Error: storage.ErrAlreadyExists.Error(),
+					Error: errPkg.ErrAlreadyExists.Error(),
 				},
 			)
 		}
@@ -73,7 +72,7 @@ func (ctrl *Controller) HandleRegister(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: storage.ErrCreateUser.Error(),
+				Error: errPkg.ErrCreateUser.Error(),
 			},
 		)
 	}
@@ -86,7 +85,7 @@ func (ctrl *Controller) HandleRegister(c echo.Context) error {
 		return c.JSON(
 			http.StatusInternalServerError,
 			model.ErrorResponse{
-				Error: storage.ErrCreateToken.Error(),
+				Error: errPkg.ErrCreateToken.Error(),
 			},
 		)
 	}
@@ -109,7 +108,7 @@ func (ctrl *Controller) HandleLogin(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -121,18 +120,18 @@ func (ctrl *Controller) HandleLogin(c echo.Context) error {
 		return c.JSON(
 			http.StatusNoContent,
 			model.ErrorResponse{
-				Error: storage.ErrGetByLogin.Error(),
+				Error: errPkg.ErrGetByLogin.Error(),
 			},
 		)
 	}
 
 	// Compare hashed password from request and from DB
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password)); err != nil {
-		ctrl.log.Error("invalid password", zap.Error(controller.InvalidPassword))
+		ctrl.log.Error("invalid password", zap.Error(errPkg.InvalidPassword))
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: storage.ErrComparingPasswords.Error(),
+				Error: errPkg.ErrComparingPasswords.Error(),
 			},
 		)
 	}
@@ -144,7 +143,7 @@ func (ctrl *Controller) HandleLogin(c echo.Context) error {
 		return c.JSON(
 			http.StatusInternalServerError,
 			model.ErrorResponse{
-				Error: storage.ErrCreateToken.Error(),
+				Error: errPkg.ErrCreateToken.Error(),
 			},
 		)
 	}
@@ -163,11 +162,11 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 	// Validate user with Token returning userID
 	userID, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		ctrl.log.Error("could not validate access token from headers", zap.Error(errPkg.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -179,7 +178,7 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: controller.ErrBindingRequest.Error(),
+				Error: errPkg.ErrBindingRequest.Error(),
 			},
 		)
 	}
@@ -191,7 +190,7 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 		return c.JSON(
 			http.StatusNoContent,
 			model.ErrorResponse{
-				Error: storage.ErrGetByLogin.Error(),
+				Error: errPkg.ErrGetByLogin.Error(),
 			},
 		)
 	}
@@ -199,22 +198,22 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 	// Compare hashed password from request and from DB
 	err = ctrl.CompareHashes([]byte(user.Password), []byte(request.OldPassword))
 	if err != nil {
-		ctrl.log.Error("invalid password", zap.Error(controller.InvalidPassword))
+		ctrl.log.Error("invalid password", zap.Error(errPkg.InvalidPassword))
 		return c.JSON(
 			http.StatusInternalServerError,
 			model.ErrorResponse{
-				Error: controller.InvalidPassword.Error(),
+				Error: errPkg.InvalidPassword.Error(),
 			},
 		)
 	}
 
 	// Compare NewPassword and  NewPasswordAgain
 	if request.NewPassword != request.NewPasswordAgain {
-		ctrl.log.Error("password are not equal", zap.Error(controller.ErrPasswordAreNotEqual))
+		ctrl.log.Error("password are not equal", zap.Error(errPkg.ErrPasswordAreNotEqual))
 		return c.JSON(
 			http.StatusNotAcceptable,
 			model.ErrorResponse{
-				Error: controller.ErrPasswordAreNotEqual.Error(),
+				Error: errPkg.ErrPasswordAreNotEqual.Error(),
 			},
 		)
 	}
@@ -225,7 +224,7 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 		return c.JSON(
 			http.StatusInternalServerError,
 			model.ErrorResponse{
-				Error: storage.ErrHashingPassword.Error(),
+				Error: errPkg.ErrHashingPassword.Error(),
 			},
 		)
 	}
@@ -237,7 +236,7 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 		return c.JSON(
 			http.StatusConflict,
 			model.ErrorResponse{
-				Error: controller.ErrInsertingInDB.Error(),
+				Error: errPkg.ErrInserting.Error(),
 			},
 		)
 	}
@@ -256,11 +255,11 @@ func (ctrl *Controller) HandleGetMe(c echo.Context) error {
 	// Validate user with Token returning userID
 	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		ctrl.log.Error("could not validate access token from headers", zap.Error(errPkg.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -273,7 +272,7 @@ func (ctrl *Controller) HandleGetMe(c echo.Context) error {
 		return c.JSON(
 			http.StatusNoContent,
 			model.ErrorResponse{
-				Error: storage.ErrGetByID.Error(),
+				Error: errPkg.ErrGetByID.Error(),
 			},
 		)
 	}
@@ -292,11 +291,11 @@ func (ctrl *Controller) HandleGetAll(c echo.Context) error {
 	// Validate user with Token returning userID
 	userID, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		ctrl.log.Error("could not validate access token from headers", zap.Error(errPkg.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -308,7 +307,7 @@ func (ctrl *Controller) HandleGetAll(c echo.Context) error {
 		return c.JSON(
 			http.StatusNoContent,
 			model.ErrorResponse{
-				Error: storage.ErrGetByID.Error(),
+				Error: errPkg.ErrGetByID.Error(),
 			},
 		)
 	}
@@ -326,11 +325,11 @@ func (ctrl *Controller) HandleRefreshToken(c echo.Context) error {
 	// Validate user with Token returning userID
 	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		ctrl.log.Error("could not validate access token from headers", zap.Error(errPkg.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -342,7 +341,7 @@ func (ctrl *Controller) HandleRefreshToken(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: controller.ErrBindingRequest.Error(),
+				Error: errPkg.ErrBindingRequest.Error(),
 			},
 		)
 	}
@@ -354,7 +353,7 @@ func (ctrl *Controller) HandleRefreshToken(c echo.Context) error {
 		return c.JSON(
 			http.StatusInternalServerError,
 			model.ErrorResponse{
-				Error: storage.ErrCreateToken.Error(),
+				Error: errPkg.ErrCreateToken.Error(),
 			},
 		)
 	}
@@ -375,11 +374,11 @@ func (ctrl *Controller) HandleCreateProject(c echo.Context) error {
 	// Validate user with Token returning userID
 	userID, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		ctrl.log.Error("could not validate access token from headers", zap.Error(errPkg.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -389,7 +388,7 @@ func (ctrl *Controller) HandleCreateProject(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: controller.ErrBindingRequest.Error(),
+				Error: errPkg.ErrBindingRequest.Error(),
 			},
 		)
 	}
@@ -401,12 +400,12 @@ func (ctrl *Controller) HandleCreateProject(c echo.Context) error {
 	}
 
 	err = ctrl.store.Project().Create(c.Request().Context(), project)
-	if errors.Is(err, storage.ErrAlreadyExists) {
+	if errors.Is(err, errPkg.ErrAlreadyExists) {
 		ctrl.log.Error("project already exists", zap.Error(err))
 		return c.JSON(
 			http.StatusConflict,
 			model.ErrorResponse{
-				Error: storage.ErrAlreadyExists.Error(),
+				Error: errPkg.ErrAlreadyExists.Error(),
 			},
 		)
 	}
@@ -430,11 +429,11 @@ func (ctrl *Controller) HandleDeleteProject(c echo.Context) error {
 	// Validate user with Token returning userID
 	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		ctrl.log.Error("could not validate access token from headers", zap.Error(errPkg.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -446,18 +445,18 @@ func (ctrl *Controller) HandleDeleteProject(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: storage.ErrBadRequestId.Error(),
+				Error: errPkg.ErrBadRequestId.Error(),
 			},
 		)
 	}
 
 	err = ctrl.store.Project().Delete(c.Request().Context(), projectID)
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		if errors.Is(err, errPkg.ErrNotFound) {
 			return c.JSON(
 				http.StatusNotFound,
 				model.ErrorResponse{
-					Error: storage.ErrNotFound.Error(),
+					Error: errPkg.ErrNotFound.Error(),
 				},
 			)
 		}
@@ -488,7 +487,7 @@ func (ctrl *Controller) HandleUpdateProject(c echo.Context) error {
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.Unauthenticated.Error(),
+				Error: errPkg.Unauthenticated.Error(),
 			},
 		)
 	}
@@ -500,7 +499,7 @@ func (ctrl *Controller) HandleUpdateProject(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: storage.ErrBadRequestId.Error(),
+				Error: errPkg.ErrBadRequestId.Error(),
 			},
 		)
 	}
@@ -509,7 +508,7 @@ func (ctrl *Controller) HandleUpdateProject(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: storage.ErrBadRequestId.Error(),
+				Error: errPkg.ErrBadRequestId.Error(),
 			},
 		)
 	}
@@ -528,21 +527,21 @@ func (ctrl *Controller) HandleUpdateProject(c echo.Context) error {
 	err = ctrl.store.Project().UpdateName(c.Request().Context(), request.Name, projectID)
 	if err != nil {
 		switch {
-		case errors.Is(err, storage.ErrNotFound):
+		case errors.Is(err, errPkg.ErrNotFound):
 			{
 				return c.JSON(
 					http.StatusNotFound,
 					model.ErrorResponse{
-						Error: storage.ErrNotFound.Error(),
+						Error: errPkg.ErrNotFound.Error(),
 					},
 				)
 			}
-		case errors.Is(err, storage.ErrAlreadyExists):
+		case errors.Is(err, errPkg.ErrAlreadyExists):
 			{
 				return c.JSON(
 					http.StatusConflict,
 					model.ErrorResponse{
-						Error: storage.ErrAlreadyExists.Error(),
+						Error: errPkg.ErrAlreadyExists.Error(),
 					},
 				)
 			}
@@ -550,7 +549,7 @@ func (ctrl *Controller) HandleUpdateProject(c echo.Context) error {
 			return c.JSON(
 				http.StatusInternalServerError,
 				model.ErrorResponse{
-					Error: storage.ErrInternalServer.Error(),
+					Error: errPkg.ErrInternalServer.Error(),
 				},
 			)
 		}
@@ -566,11 +565,11 @@ func (ctrl *Controller) HandleGetMyProject(c echo.Context) error {
 	// Validate user with Token returning userID
 	userID, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		ctrl.log.Error("could not validate access token from headers", zap.Error(errPkg.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -578,10 +577,10 @@ func (ctrl *Controller) HandleGetMyProject(c echo.Context) error {
 
 	myProjects, err = ctrl.store.Project().GetMyProjects(c.Request().Context(), userID)
 	if err != nil {
-		if errors.Is(err, storage.ErrNotAccessible) {
+		if errors.Is(err, errPkg.ErrNotAccessible) {
 			return c.JSON(
 				http.StatusNoContent, model.ErrorResponse{
-					Error: controller.ErrNoContent.Error(),
+					Error: errPkg.ErrNoContent.Error(),
 				},
 			)
 		}
@@ -601,11 +600,11 @@ func (ctrl *Controller) HandleGetMyProjectById(c echo.Context) error {
 	// Validate user with Token returning userID
 	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		ctrl.log.Error("could not validate access token from headers", zap.Error(errPkg.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -615,16 +614,16 @@ func (ctrl *Controller) HandleGetMyProjectById(c echo.Context) error {
 	projectID, err = uuid.Parse(projectIDStr)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error: storage.ErrBadRequestId.Error(),
+			Error: errPkg.ErrBadRequestId.Error(),
 		},
 		)
 	}
 
 	project, err := ctrl.store.Project().GetByID(c.Request().Context(), projectID)
 	if err != nil {
-		if errors.Is(err, storage.ErrNotAccessible) {
+		if errors.Is(err, errPkg.ErrNotAccessible) {
 			return c.JSON(http.StatusNotFound, model.ErrorResponse{
-				Error: storage.ErrNotFound.Error(),
+				Error: errPkg.ErrNotFound.Error(),
 			},
 			)
 		}
@@ -645,11 +644,11 @@ func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 	// Validate user with Token returning userID
 	userId, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		ctrl.log.Error("could not validate access token from headers", zap.Error(errPkg.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -659,7 +658,7 @@ func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: controller.ErrBindingRequest.Error(),
+				Error: errPkg.ErrBindingRequest.Error(),
 			},
 		)
 	}
@@ -675,12 +674,12 @@ func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 	}
 
 	err = ctrl.store.Todo().Create(c.Request().Context(), todo)
-	if errors.Is(err, storage.ErrAlreadyExists) {
+	if errors.Is(err, errPkg.ErrAlreadyExists) {
 		ctrl.log.Error("project already exists", zap.Error(err))
 		return c.JSON(
 			http.StatusConflict,
 			model.ErrorResponse{
-				Error: storage.ErrAlreadyExists.Error(),
+				Error: errPkg.ErrAlreadyExists.Error(),
 			},
 		)
 	}
@@ -709,11 +708,11 @@ func (ctrl *Controller) HandleGetTodosById(c echo.Context) error {
 	// Validate user with Token returning userID
 	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		ctrl.log.Error("could not validate access token from headers", zap.Error(errPkg.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -723,16 +722,16 @@ func (ctrl *Controller) HandleGetTodosById(c echo.Context) error {
 	todoID, err = uuid.Parse(id)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error: storage.ErrBadRequestId.Error(),
+			Error: errPkg.ErrBadRequestId.Error(),
 		},
 		)
 	}
 
 	todo, err := ctrl.store.Todo().GetByID(c.Request().Context(), todoID)
 	if err != nil {
-		if errors.Is(err, storage.ErrNotAccessible) {
+		if errors.Is(err, errPkg.ErrNotAccessible) {
 			return c.JSON(http.StatusNotFound, model.ErrorResponse{
-				Error: storage.ErrNotFound.Error(),
+				Error: errPkg.ErrNotFound.Error(),
 			},
 			)
 		}
@@ -769,7 +768,7 @@ func (ctrl *Controller) HandleChangeTodo(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: storage.ErrBadRequestId.Error(),
+				Error: errPkg.ErrBadRequestId.Error(),
 			},
 		)
 	}
@@ -779,25 +778,25 @@ func (ctrl *Controller) HandleChangeTodo(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: storage.ErrBadRequestId.Error(),
+				Error: errPkg.ErrBadRequestId.Error(),
 			},
 		)
 	}
 
 	todo, err := ctrl.store.Todo().GetByID(c.Request().Context(), todoID)
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		if errors.Is(err, errPkg.ErrNotFound) {
 			return c.JSON(
 				http.StatusNotFound,
 				model.ErrorResponse{
-					Error: storage.ErrNotFound.Error(),
+					Error: errPkg.ErrNotFound.Error(),
 				},
 			)
 		}
 		return c.JSON(
 			http.StatusInternalServerError,
 			model.ErrorResponse{
-				Error: storage.ErrInternalServer.Error(),
+				Error: errPkg.ErrInternalServer.Error(),
 			},
 		)
 	}
@@ -813,7 +812,7 @@ func (ctrl *Controller) HandleChangeTodo(c echo.Context) error {
 		return c.JSON(
 			http.StatusInternalServerError,
 			model.ErrorResponse{
-				Error: storage.ErrInternalServer.Error(),
+				Error: errPkg.ErrInternalServer.Error(),
 			},
 		)
 	}
@@ -833,11 +832,11 @@ func (ctrl *Controller) HandleDeleteTodo(c echo.Context) error {
 	// Validate user with Token returning userID
 	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		ctrl.log.Error("could not validate access token from headers", zap.Error(errPkg.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -849,18 +848,18 @@ func (ctrl *Controller) HandleDeleteTodo(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: storage.ErrBadRequestId.Error(),
+				Error: errPkg.ErrBadRequestId.Error(),
 			},
 		)
 	}
 
 	err = ctrl.store.Todo().Delete(c.Request().Context(), todoID)
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		if errors.Is(err, errPkg.ErrNotFound) {
 			return c.JSON(
 				http.StatusNotFound,
 				model.ErrorResponse{
-					Error: storage.ErrNotFound.Error(),
+					Error: errPkg.ErrNotFound.Error(),
 				},
 			)
 		}
@@ -886,11 +885,11 @@ func (ctrl *Controller) HandleGetAllTodos(c echo.Context) error {
 	// Taking a userID from request
 	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		ctrl.log.Error("could not validate access token from headers", zap.Error(errPkg.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -902,7 +901,7 @@ func (ctrl *Controller) HandleGetAllTodos(c echo.Context) error {
 		return c.JSON(
 			http.StatusNoContent,
 			model.ErrorResponse{
-				Error: storage.ErrGetByID.Error(),
+				Error: errPkg.ErrGetByID.Error(),
 			},
 		)
 	}
@@ -922,11 +921,11 @@ func (ctrl *Controller) HandleCreateColumn(c echo.Context) error {
 	// Validate user with Token returning userID
 	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		ctrl.log.Error("could not validate access token from headers", zap.Error(errPkg.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -936,7 +935,7 @@ func (ctrl *Controller) HandleCreateColumn(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: controller.ErrBindingRequest.Error(),
+				Error: errPkg.ErrBindingRequest.Error(),
 			},
 		)
 	}
@@ -948,12 +947,12 @@ func (ctrl *Controller) HandleCreateColumn(c echo.Context) error {
 	}
 
 	err = ctrl.store.Column().CreateColumn(c.Request().Context(), column)
-	if errors.Is(err, storage.ErrAlreadyExists) {
+	if errors.Is(err, errPkg.ErrAlreadyExists) {
 		ctrl.log.Error("user already exists", zap.Error(err))
 		return c.JSON(
 			http.StatusConflict,
 			model.ErrorResponse{
-				Error: storage.ErrAlreadyExists.Error(),
+				Error: errPkg.ErrAlreadyExists.Error(),
 			},
 		)
 	}
@@ -978,11 +977,11 @@ func (ctrl *Controller) HandleDeleteColumn(c echo.Context) error {
 	// Validate user with Token returning userID
 	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		ctrl.log.Error("could not validate access token from headers", zap.Error(errPkg.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -994,7 +993,7 @@ func (ctrl *Controller) HandleDeleteColumn(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: storage.ErrBadRequestId.Error(),
+				Error: errPkg.ErrBadRequestId.Error(),
 			})
 	}
 	columnName = c.Param("name")
@@ -1004,7 +1003,7 @@ func (ctrl *Controller) HandleDeleteColumn(c echo.Context) error {
 		return c.JSON(
 			http.StatusInternalServerError,
 			model.ErrorResponse{
-				Error: storage.ErrInternalServer.Error(),
+				Error: errPkg.ErrInternalServer.Error(),
 			})
 	}
 	return c.NoContent(http.StatusNoContent)
@@ -1022,11 +1021,11 @@ func (ctrl *Controller) HandleGetColumnByName(c echo.Context) error {
 	// Validate user with Token returning userID
 	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		ctrl.log.Error("could not validate access token from headers", zap.Error(errPkg.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -1038,15 +1037,15 @@ func (ctrl *Controller) HandleGetColumnByName(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: storage.ErrBadRequestId.Error(),
+				Error: errPkg.ErrBadRequestId.Error(),
 			})
 	}
 	columnName = c.Param("name")
 	column, err := ctrl.store.Column().GetColumnByName(c.Request().Context(), columnName, projectUUID)
 	if err != nil {
-		if errors.Is(err, storage.ErrNotAccessible) {
+		if errors.Is(err, errPkg.ErrNotAccessible) {
 			return c.JSON(http.StatusNotFound, model.ErrorResponse{
-				Error: storage.ErrNotFound.Error(),
+				Error: errPkg.ErrNotFound.Error(),
 			})
 		}
 		return err
@@ -1067,11 +1066,11 @@ func (ctrl *Controller) HandleUpdateColumn(c echo.Context) error {
 	// Validate user with Token returning userID
 	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		ctrl.log.Error("could not validate access token from headers", zap.Error(errPkg.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -1083,7 +1082,7 @@ func (ctrl *Controller) HandleUpdateColumn(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: storage.ErrBadRequestId.Error(),
+				Error: errPkg.ErrBadRequestId.Error(),
 			})
 	}
 
@@ -1092,24 +1091,24 @@ func (ctrl *Controller) HandleUpdateColumn(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: storage.ErrBadRequestId.Error(),
+				Error: errPkg.ErrBadRequestId.Error(),
 			},
 		)
 	}
 	column, err := ctrl.store.Column().GetColumnByName(c.Request().Context(), columnName, projectUUID)
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		if errors.Is(err, errPkg.ErrNotFound) {
 			return c.JSON(
 				http.StatusNotFound,
 				model.ErrorResponse{
-					Error: storage.ErrNotFound.Error(),
+					Error: errPkg.ErrNotFound.Error(),
 				},
 			)
 		}
 		return c.JSON(
 			http.StatusInternalServerError,
 			model.ErrorResponse{
-				Error: storage.ErrInternalServer.Error(),
+				Error: errPkg.ErrInternalServer.Error(),
 			},
 		)
 	}
@@ -1121,7 +1120,7 @@ func (ctrl *Controller) HandleUpdateColumn(c echo.Context) error {
 		return c.JSON(
 			http.StatusInternalServerError,
 			model.ErrorResponse{
-				Error: storage.ErrInternalServer.Error(),
+				Error: errPkg.ErrInternalServer.Error(),
 			},
 		)
 	}
@@ -1142,11 +1141,11 @@ func (ctrl *Controller) HandleGetAllColumn(c echo.Context) error {
 	// Taking a userID from request
 	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
-		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
+		ctrl.log.Error("could not validate access token from headers", zap.Error(errPkg.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
-				Error: controller.ErrValidationToken.Error(),
+				Error: errPkg.ErrValidationToken.Error(),
 			},
 		)
 	}
@@ -1158,7 +1157,7 @@ func (ctrl *Controller) HandleGetAllColumn(c echo.Context) error {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
-				Error: storage.ErrBadRequestId.Error(),
+				Error: errPkg.ErrBadRequestId.Error(),
 			})
 	}
 
@@ -1168,7 +1167,7 @@ func (ctrl *Controller) HandleGetAllColumn(c echo.Context) error {
 		return c.JSON(
 			http.StatusNoContent,
 			model.ErrorResponse{
-				Error: storage.ErrGetByID.Error(),
+				Error: errPkg.ErrGetByID.Error(),
 			},
 		)
 	}

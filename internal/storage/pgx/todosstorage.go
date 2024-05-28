@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/todo-enjoers/backend_v1/internal/model"
+	errors2 "github.com/todo-enjoers/backend_v1/internal/pkg/errors"
 	"github.com/todo-enjoers/backend_v1/internal/storage"
 	"go.uber.org/zap"
 )
@@ -37,7 +38,7 @@ func newTodoStorage(pool *pgxpool.Pool, log *zap.Logger, pgErr *pgconn.PgError) 
 func (store *todoStorage) migrateT() error {
 	_, err := store.pool.Exec(context.Background(), queryMigrateT)
 	if err != nil {
-		return storage.ErrTableMigrations
+		return errors2.ErrTableMigrations
 	}
 	return nil
 }
@@ -46,9 +47,9 @@ func (store *todoStorage) Create(ctx context.Context, todo *model.TodoDTO) error
 	_, err := store.pool.Exec(ctx, queryCreateTodo, todo.ID, todo.Name, todo.Description, todo.IsCompleted, todo.CreatedBy, todo.ProjectID, todo.Column)
 	if err != nil {
 		if errors.As(err, &store.pgErr) && pgerrcode.UniqueViolation == store.pgErr.Code {
-			return storage.ErrAlreadyExists
+			return errors2.ErrAlreadyExists
 		}
-		return storage.ErrInserting
+		return errors2.ErrInserting
 	}
 	return nil
 }
@@ -57,7 +58,7 @@ func (store *todoStorage) GetByID(ctx context.Context, id uuid.UUID) (*model.Tod
 	var todo model.TodoDTO
 	err := store.pool.QueryRow(ctx, queryTodoGetByID, id).Scan(&todo.ID, &todo.Name, &todo.Description, &todo.IsCompleted, &todo.CreatedBy, &todo.ProjectID, &todo.Column)
 	if err != nil {
-		return nil, storage.ErrGetByID
+		return nil, errors2.ErrGetByID
 	}
 	return &todo, nil
 }
@@ -99,7 +100,7 @@ func (store *todoStorage) Delete(ctx context.Context, id uuid.UUID) error {
 	}
 
 	if commandTag.RowsAffected() == 0 {
-		return storage.ErrNotFound
+		return errors2.ErrNotFound
 	}
 
 	return nil

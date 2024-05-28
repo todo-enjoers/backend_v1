@@ -10,10 +10,10 @@ help:
 #	@echo "  database-up		rise up a database with docker files"
 	@echo "  run			run"
 	@echo ""
-	@echo "You should run <all> to fully build and run the project"
 	@echo "To start a db connection use:"
 	@echo "	1. service docker run"
 	@echo "	2. sudo docker compose -f infra/postgres.yaml up -d"
+	@echo "You should run <all> to fully build and run the project"
 
 .PHONY: all
 all: build run-prepare run
@@ -37,7 +37,7 @@ gen-pri-key:
 #docker-run:
 #	@service docker run
 #docker-compose:
-#	@docker compose -f ./infra/postgres.yaml up -d $(c)
+#	@sudo docker compose -f ./infra/postgres.yaml up -d $(c)
 #
 
 .PHONY: run

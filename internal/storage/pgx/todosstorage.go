@@ -2,8 +2,10 @@ package pgx
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/todo-enjoers/backend_v1/internal/model"
@@ -39,9 +41,10 @@ func (store *todoStorage) migrateT() error {
 func (store *todoStorage) Create(ctx context.Context, todo *model.TodoDTO) error {
 	_, err := store.pool.Exec(ctx, queryCreateTodo, todo.ID, todo.Name, todo.Description, todo.IsCompleted, todo.CreatedBy, todo.ProjectID, todo.Column)
 	if err != nil {
-		return err
-		fmt.Errorf("got err, when adding todo: %w", err)
-
+		if errors.As(err, &store.pgErr) && pgerrcode.UniqueViolation == store.pgErr.Code {
+			return storage.ErrAlreadyExists
+		}
+		return storage.ErrInserting
 	}
 	return nil
 }

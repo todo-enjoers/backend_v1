@@ -16,11 +16,13 @@ func (ctrl *Controller) generateAccessAndRefreshTokenForUser(userID uuid.UUID) (
 	if err != nil {
 		return "", "", fmt.Errorf("error creating accessToken token for userID: %w", err)
 	}
+
 	//Creating refresh token for userID if isAccess is false
 	refreshToken, err = ctrl.token.CreateTokenForUser(userID, false)
 	if err != nil {
 		return "", "", fmt.Errorf("error creating refresh token for userID: %w", err)
 	}
+
 	return
 }
 

@@ -12,5 +12,4 @@
 go.work
 .idea/
 certs/
-.idea/
 migrations/

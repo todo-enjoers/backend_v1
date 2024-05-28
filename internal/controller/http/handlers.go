@@ -160,7 +160,7 @@ func (ctrl *Controller) HandleLogin(c echo.Context) error {
 func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 	var request model.UserChangePasswordRequest
 
-	// Validate user with Token returning id
+	// Validate user with Token returning userID
 	userID, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
@@ -248,13 +248,13 @@ func (ctrl *Controller) HandleChangePassword(c echo.Context) error {
 
 func (ctrl *Controller) HandleGetMe(c echo.Context) error {
 	var (
-		me            *model.UserDTO
-		err           error
-		requestUserID uuid.UUID
+		me     *model.UserDTO
+		err    error
+		userID uuid.UUID
 	)
 
-	// Taking a userID from request
-	requestUserID, err = ctrl.getUserIDFromRequest(c.Request())
+	// Validate user with Token returning userID
+	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(
@@ -264,10 +264,10 @@ func (ctrl *Controller) HandleGetMe(c echo.Context) error {
 			},
 		)
 	}
-	ctrl.log.Info("HandleGetMe: logged in", zap.String("user_id", requestUserID.String()))
+	ctrl.log.Info("HandleGetMe: logged in", zap.String("user_id", userID.String()))
 
 	// Getting "Me" from DB
-	me, err = ctrl.store.User().GetByID(c.Request().Context(), requestUserID)
+	me, err = ctrl.store.User().GetByID(c.Request().Context(), userID)
 	if err != nil {
 		ctrl.log.Error("error while getting user by id from DB", zap.Error(err))
 		return c.JSON(
@@ -289,8 +289,8 @@ func (ctrl *Controller) HandleGetMe(c echo.Context) error {
 func (ctrl *Controller) HandleGetAll(c echo.Context) error {
 	var list []model.UserDTO
 
-	// Taking a userID from request
-	requestUserID, err := ctrl.getUserIDFromRequest(c.Request())
+	// Validate user with Token returning userID
+	userID, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(
@@ -300,7 +300,7 @@ func (ctrl *Controller) HandleGetAll(c echo.Context) error {
 			},
 		)
 	}
-	ctrl.log.Info("HandleGetAll: logged in", zap.String("user_id", requestUserID.String()))
+	ctrl.log.Info("HandleGetAll: logged in", zap.String("user_id", userID.String()))
 
 	list, err = ctrl.store.User().GetAll(c.Request().Context())
 	if err != nil {
@@ -319,23 +319,12 @@ func (ctrl *Controller) HandleGetAll(c echo.Context) error {
 func (ctrl *Controller) HandleRefreshToken(c echo.Context) error {
 	var (
 		request model.UserCoupleTokensRequest
-		//refreshToken  string
-		requestUserID uuid.UUID
-		err           error
+		userID  uuid.UUID
+		err     error
 	)
-	// Binding request
-	if err := c.Bind(&request); err != nil {
-		ctrl.log.Error("could not bind request", zap.Error(err))
-		return c.JSON(
-			http.StatusBadRequest,
-			model.ErrorResponse{
-				Error: controller.ErrBindingRequest.Error(),
-			},
-		)
-	}
 
-	// Taking a userID from request
-	requestUserID, err = ctrl.getUserIDFromRequest(c.Request())
+	// Validate user with Token returning userID
+	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(
@@ -345,9 +334,21 @@ func (ctrl *Controller) HandleRefreshToken(c echo.Context) error {
 			},
 		)
 	}
+	ctrl.log.Info("HandleRefreshToken: logged in", zap.String("user_id", userID.String()))
+
+	// Binding request
+	if err = c.Bind(&request); err != nil {
+		ctrl.log.Error("could not bind request", zap.Error(err))
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: controller.ErrBindingRequest.Error(),
+			},
+		)
+	}
 
 	// Generating token's for the user
-	accessToken, refreshToken, err := ctrl.generateAccessAndRefreshTokenForUser(requestUserID)
+	accessToken, refreshToken, err := ctrl.generateAccessAndRefreshTokenForUser(userID)
 	if err != nil {
 		ctrl.log.Error("got error while creating tokens", zap.Error(err))
 		return c.JSON(
@@ -359,7 +360,7 @@ func (ctrl *Controller) HandleRefreshToken(c echo.Context) error {
 	}
 
 	response := &model.UserCoupleTokensResponse{
-		ID:           requestUserID,
+		ID:           userID,
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}
@@ -370,14 +371,8 @@ func (ctrl *Controller) HandleRefreshToken(c echo.Context) error {
 
 func (ctrl *Controller) HandleCreateProject(c echo.Context) error {
 	var request model.ProjectRequest
-	if err := c.Bind(&request); err != nil {
-		return c.JSON(
-			http.StatusBadRequest,
-			model.ErrorResponse{
-				Error: controller.ErrBindingRequest.Error(),
-			},
-		)
-	}
+
+	// Validate user with Token returning userID
 	userID, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
@@ -385,6 +380,16 @@ func (ctrl *Controller) HandleCreateProject(c echo.Context) error {
 			http.StatusUnauthorized,
 			model.ErrorResponse{
 				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+	ctrl.log.Info("HandleCreateProject: logged in", zap.String("user_id", userID.String()))
+
+	if err = c.Bind(&request); err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: controller.ErrBindingRequest.Error(),
 			},
 		)
 	}
@@ -415,24 +420,33 @@ func (ctrl *Controller) HandleCreateProject(c echo.Context) error {
 }
 
 func (ctrl *Controller) HandleDeleteProject(c echo.Context) error {
-	projectIDStr := c.Param("id")
-	projectID, err := uuid.Parse(projectIDStr)
-	if err != nil {
-		return c.JSON(
-			http.StatusBadRequest,
-			model.ErrorResponse{
-				Error: storage.ErrBadRequestId.Error(),
-			},
-		)
-	}
+	var (
+		projectIDStr string
+		projectID    uuid.UUID
+		userID       uuid.UUID
+		err          error
+	)
 
-	_, err = ctrl.getUserIDFromRequest(c.Request())
+	// Validate user with Token returning userID
+	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
 				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+	ctrl.log.Info("HandleDeleteProject: logged in", zap.String("user_id", userID.String()))
+
+	projectIDStr = c.Param("id")
+	projectID, err = uuid.Parse(projectIDStr)
+	if err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: storage.ErrBadRequestId.Error(),
 			},
 		)
 	}
@@ -460,9 +474,16 @@ func (ctrl *Controller) HandleDeleteProject(c echo.Context) error {
 }
 
 func (ctrl *Controller) HandleUpdateProject(c echo.Context) error {
-	var request model.ProjectRequest
+	var (
+		request      model.ProjectRequest
+		projectIDStr string
+		projectID    uuid.UUID
+		userID       uuid.UUID
+		err          error
+	)
 
-	_, err := ctrl.getUserIDFromRequest(c.Request())
+	// Validate user with Token returning userID
+	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		return c.JSON(
 			http.StatusUnauthorized,
@@ -471,9 +492,10 @@ func (ctrl *Controller) HandleUpdateProject(c echo.Context) error {
 			},
 		)
 	}
+	ctrl.log.Info("HandleUpdateProject: logged in", zap.String("user_id", userID.String()))
 
-	projectIDStr := c.Param("id")
-	projectID, err := uuid.Parse(projectIDStr)
+	projectIDStr = c.Param("id")
+	projectID, err = uuid.Parse(projectIDStr)
 	if err != nil {
 		return c.JSON(
 			http.StatusBadRequest,
@@ -541,6 +563,7 @@ func (ctrl *Controller) HandleUpdateProject(c echo.Context) error {
 func (ctrl *Controller) HandleGetMyProject(c echo.Context) error {
 	var myProjects []model.ProjectDTO
 
+	// Validate user with Token returning userID
 	userID, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
@@ -551,6 +574,7 @@ func (ctrl *Controller) HandleGetMyProject(c echo.Context) error {
 			},
 		)
 	}
+	ctrl.log.Info("HandleGetMyProject: logged in", zap.String("user_id", userID.String()))
 
 	myProjects, err = ctrl.store.Project().GetMyProjects(c.Request().Context(), userID)
 	if err != nil {
@@ -567,15 +591,15 @@ func (ctrl *Controller) HandleGetMyProject(c echo.Context) error {
 }
 
 func (ctrl *Controller) HandleGetMyProjectById(c echo.Context) error {
-	id := c.Param("id")
-	projectID, err := uuid.Parse(id)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error: storage.ErrBadRequestId.Error(),
-		},
-		)
-	}
-	_, err = ctrl.getUserIDFromRequest(c.Request())
+	var (
+		projectIDStr string
+		userID       uuid.UUID
+		projectID    uuid.UUID
+		err          error
+	)
+
+	// Validate user with Token returning userID
+	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(
@@ -585,6 +609,17 @@ func (ctrl *Controller) HandleGetMyProjectById(c echo.Context) error {
 			},
 		)
 	}
+	ctrl.log.Info("HandleGetMyProjectById: logged in", zap.String("user_id", userID.String()))
+
+	projectIDStr = c.Param("id")
+	projectID, err = uuid.Parse(projectIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, model.ErrorResponse{
+			Error: storage.ErrBadRequestId.Error(),
+		},
+		)
+	}
+
 	project, err := ctrl.store.Project().GetByID(c.Request().Context(), projectID)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotAccessible) {
@@ -602,15 +637,12 @@ func (ctrl *Controller) HandleGetMyProjectById(c echo.Context) error {
 // ./api/todos
 
 func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
-	var request model.TodoCreateRequest
-	if err := c.Bind(&request); err != nil {
-		return c.JSON(
-			http.StatusBadRequest,
-			model.ErrorResponse{
-				Error: controller.ErrBindingRequest.Error(),
-			},
-		)
-	}
+	var (
+		request model.TodoCreateRequest
+		userID  uuid.UUID
+	)
+
+	// Validate user with Token returning userID
 	userId, err := ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
@@ -618,6 +650,16 @@ func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 			http.StatusUnauthorized,
 			model.ErrorResponse{
 				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+	ctrl.log.Info("HandleCreateTodo: logged in", zap.String("user_id", userID.String()))
+
+	if err = c.Bind(&request); err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: controller.ErrBindingRequest.Error(),
 			},
 		)
 	}
@@ -657,15 +699,15 @@ func (ctrl *Controller) HandleCreateTodo(c echo.Context) error {
 }
 
 func (ctrl *Controller) HandleGetTodosById(c echo.Context) error {
-	id := c.Param("id")
-	todoID, err := uuid.Parse(id)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error: storage.ErrBadRequestId.Error(),
-		},
-		)
-	}
-	_, err = ctrl.getUserIDFromRequest(c.Request())
+	var (
+		id     string
+		todoID uuid.UUID
+		userID uuid.UUID
+		err    error
+	)
+
+	// Validate user with Token returning userID
+	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(
@@ -673,6 +715,16 @@ func (ctrl *Controller) HandleGetTodosById(c echo.Context) error {
 			model.ErrorResponse{
 				Error: controller.ErrValidationToken.Error(),
 			},
+		)
+	}
+	ctrl.log.Info("HandleGetTodosById: logged in", zap.String("user_id", userID.String()))
+
+	id = c.Param("id")
+	todoID, err = uuid.Parse(id)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, model.ErrorResponse{
+			Error: storage.ErrBadRequestId.Error(),
+		},
 		)
 	}
 
@@ -690,9 +742,16 @@ func (ctrl *Controller) HandleGetTodosById(c echo.Context) error {
 }
 
 func (ctrl *Controller) HandleChangeTodo(c echo.Context) error {
-	var request model.TodoUpdateRequest
-	// get user id
-	_, err := ctrl.getUserIDFromRequest(c.Request())
+	var (
+		request   model.TodoUpdateRequest
+		todoIDStr string
+		todoID    uuid.UUID
+		userID    uuid.UUID
+		err       error
+	)
+
+	// Validate user with Token returning userID
+	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		return c.JSON(
 			http.StatusUnauthorized,
@@ -701,10 +760,11 @@ func (ctrl *Controller) HandleChangeTodo(c echo.Context) error {
 			},
 		)
 	}
+	ctrl.log.Info("HandleChangeTodo: logged in", zap.String("user_id", userID.String()))
 
 	// parse id
-	todoIDStr := c.Param("id")
-	todoID, err := uuid.Parse(todoIDStr)
+	todoIDStr = c.Param("id")
+	todoID, err = uuid.Parse(todoIDStr)
 	if err != nil {
 		return c.JSON(
 			http.StatusBadRequest,
@@ -713,6 +773,7 @@ func (ctrl *Controller) HandleChangeTodo(c echo.Context) error {
 			},
 		)
 	}
+
 	//get request
 	if err := c.Bind(&request); err != nil {
 		return c.JSON(
@@ -723,7 +784,6 @@ func (ctrl *Controller) HandleChangeTodo(c echo.Context) error {
 		)
 	}
 
-	// get todo by id
 	todo, err := ctrl.store.Todo().GetByID(c.Request().Context(), todoID)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
@@ -763,24 +823,33 @@ func (ctrl *Controller) HandleChangeTodo(c echo.Context) error {
 }
 
 func (ctrl *Controller) HandleDeleteTodo(c echo.Context) error {
-	todoIDStr := c.Param("id")
-	todoID, err := uuid.Parse(todoIDStr)
-	if err != nil {
-		return c.JSON(
-			http.StatusBadRequest,
-			model.ErrorResponse{
-				Error: storage.ErrBadRequestId.Error(),
-			},
-		)
-	}
+	var (
+		todoIDStr string
+		todoID    uuid.UUID
+		userID    uuid.UUID
+		err       error
+	)
 
-	_, err = ctrl.getUserIDFromRequest(c.Request())
+	// Validate user with Token returning userID
+	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
 				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+	ctrl.log.Info("HandleDeleteColumn: logged in", zap.String("user_id", userID.String()))
+
+	todoIDStr = c.Param("id")
+	todoID, err = uuid.Parse(todoIDStr)
+	if err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: storage.ErrBadRequestId.Error(),
 			},
 		)
 	}
@@ -825,7 +894,7 @@ func (ctrl *Controller) HandleGetAllTodos(c echo.Context) error {
 			},
 		)
 	}
-	ctrl.log.Info("HandleGetAllTodos: got user id", zap.String("user_id", userID.String()))
+	ctrl.log.Info("HandleGetAllTodos: logged in", zap.String("user_id", userID.String()))
 
 	listTodos, err = ctrl.store.Todo().GetAll(c.Request().Context(), userID)
 	if err != nil {
@@ -844,24 +913,30 @@ func (ctrl *Controller) HandleGetAllTodos(c echo.Context) error {
 // ./api/columns
 
 func (ctrl *Controller) HandleCreateColumn(c echo.Context) error {
-	var request model.ColumRequest
-	if err := c.Bind(&request); err != nil {
-		return c.JSON(
-			http.StatusBadRequest,
-			model.ErrorResponse{
-				Error: controller.ErrBindingRequest.Error(),
-			},
-		)
-	}
+	var (
+		request model.ColumRequest
+		userID  uuid.UUID
+		err     error
+	)
 
-	// Taking a userID from request
-	_, err := ctrl.getUserIDFromRequest(c.Request())
+	// Validate user with Token returning userID
+	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(
 			http.StatusUnauthorized,
 			model.ErrorResponse{
 				Error: controller.ErrValidationToken.Error(),
+			},
+		)
+	}
+	ctrl.log.Info("HandleCreateColumn: logged in", zap.String("user_id", userID.String()))
+
+	if err = c.Bind(&request); err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: controller.ErrBindingRequest.Error(),
 			},
 		)
 	}
@@ -889,21 +964,19 @@ func (ctrl *Controller) HandleCreateColumn(c echo.Context) error {
 	}
 	ctrl.log.Info("successfully created new todo", zap.Any("todo", response))
 	return c.JSON(http.StatusCreated, response)
-
 }
 
 func (ctrl *Controller) HandleDeleteColumn(c echo.Context) error {
-	projectID := c.Param("id")
-	projectUUID, err := uuid.Parse(projectID)
-	if err != nil {
-		return c.JSON(
-			http.StatusBadRequest,
-			model.ErrorResponse{
-				Error: storage.ErrBadRequestId.Error(),
-			})
-	}
-	columnName := c.Param("name")
-	_, err = ctrl.getUserIDFromRequest(c.Request())
+	var (
+		projectID   string
+		projectUUID uuid.UUID
+		columnName  string
+		userID      uuid.UUID
+		err         error
+	)
+
+	// Validate user with Token returning userID
+	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(
@@ -913,6 +986,18 @@ func (ctrl *Controller) HandleDeleteColumn(c echo.Context) error {
 			},
 		)
 	}
+	ctrl.log.Info("HandleDeleteColumn: logged in", zap.String("user_id", userID.String()))
+
+	projectID = c.Param("id")
+	projectUUID, err = uuid.Parse(projectID)
+	if err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: storage.ErrBadRequestId.Error(),
+			})
+	}
+	columnName = c.Param("name")
 
 	err = ctrl.store.Column().DeleteColumn(c.Request().Context(), columnName, projectUUID)
 	if err != nil {
@@ -926,17 +1011,16 @@ func (ctrl *Controller) HandleDeleteColumn(c echo.Context) error {
 }
 
 func (ctrl *Controller) HandleGetColumnByName(c echo.Context) error {
-	projectID := c.Param("id")
-	projectUUID, err := uuid.Parse(projectID)
-	if err != nil {
-		return c.JSON(
-			http.StatusBadRequest,
-			model.ErrorResponse{
-				Error: storage.ErrBadRequestId.Error(),
-			})
-	}
-	columnName := c.Param("name")
-	_, err = ctrl.getUserIDFromRequest(c.Request())
+	var (
+		projectUUID uuid.UUID
+		projectID   string
+		userID      uuid.UUID
+		columnName  string
+		err         error
+	)
+
+	// Validate user with Token returning userID
+	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(
@@ -946,6 +1030,18 @@ func (ctrl *Controller) HandleGetColumnByName(c echo.Context) error {
 			},
 		)
 	}
+	ctrl.log.Info("HandleGetColumnByName: logged in", zap.String("user_id", userID.String()))
+
+	projectID = c.Param("id")
+	projectUUID, err = uuid.Parse(projectID)
+	if err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: storage.ErrBadRequestId.Error(),
+			})
+	}
+	columnName = c.Param("name")
 	column, err := ctrl.store.Column().GetColumnByName(c.Request().Context(), columnName, projectUUID)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotAccessible) {
@@ -959,8 +1055,17 @@ func (ctrl *Controller) HandleGetColumnByName(c echo.Context) error {
 }
 
 func (ctrl *Controller) HandleUpdateColumn(c echo.Context) error {
-	var request model.ColumRequest
-	_, err := ctrl.getUserIDFromRequest(c.Request())
+	var (
+		request      model.ColumRequest
+		projectIDStr string
+		projectUUID  uuid.UUID
+		columnName   string
+		userID       uuid.UUID
+		err          error
+	)
+
+	// Validate user with Token returning userID
+	userID, err = ctrl.getUserIDFromRequest(c.Request())
 	if err != nil {
 		ctrl.log.Error("could not validate access token from headers", zap.Error(controller.ErrValidationToken))
 		return c.JSON(
@@ -970,8 +1075,10 @@ func (ctrl *Controller) HandleUpdateColumn(c echo.Context) error {
 			},
 		)
 	}
-	projectID := c.Param("id")
-	projectUUID, err := uuid.Parse(projectID)
+	ctrl.log.Info("HandleUpdateColumn: logged in", zap.String("user_id", userID.String()))
+
+	projectIDStr = c.Param("id")
+	projectUUID, err = uuid.Parse(projectIDStr)
 	if err != nil {
 		return c.JSON(
 			http.StatusBadRequest,
@@ -979,8 +1086,9 @@ func (ctrl *Controller) HandleUpdateColumn(c echo.Context) error {
 				Error: storage.ErrBadRequestId.Error(),
 			})
 	}
-	columnName := c.Param("name")
-	if err := c.Bind(&request); err != nil {
+
+	columnName = c.Param("name")
+	if err = c.Bind(&request); err != nil {
 		return c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
@@ -1005,7 +1113,9 @@ func (ctrl *Controller) HandleUpdateColumn(c echo.Context) error {
 			},
 		)
 	}
+
 	column.Name = request.Name
+
 	err = ctrl.store.Column().UpdateColumn(c.Request().Context(), column, columnName, projectUUID)
 	if err != nil {
 		return c.JSON(
@@ -1021,18 +1131,12 @@ func (ctrl *Controller) HandleUpdateColumn(c echo.Context) error {
 }
 
 func (ctrl *Controller) HandleGetAllColumn(c echo.Context) error {
-	projectID := c.Param("id")
-	projectUUID, err := uuid.Parse(projectID)
-	if err != nil {
-		return c.JSON(
-			http.StatusBadRequest,
-			model.ErrorResponse{
-				Error: storage.ErrBadRequestId.Error(),
-			})
-	}
 	var (
-		listColumns []model.ColumDTO
-		userID      uuid.UUID
+		listColumns  []model.ColumDTO
+		userID       uuid.UUID
+		projectIDStr string
+		projectUUID  uuid.UUID
+		err          error
 	)
 
 	// Taking a userID from request
@@ -1046,7 +1150,17 @@ func (ctrl *Controller) HandleGetAllColumn(c echo.Context) error {
 			},
 		)
 	}
-	ctrl.log.Info("HandleGetAll: logged in", zap.String("user_id", userID.String()))
+	ctrl.log.Info("HandleGetAllColumn: logged in", zap.String("user_id", userID.String()))
+
+	projectIDStr = c.Param("id")
+	projectUUID, err = uuid.Parse(projectIDStr)
+	if err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: storage.ErrBadRequestId.Error(),
+			})
+	}
 
 	listColumns, err = ctrl.store.Column().GetAllColumns(c.Request().Context(), projectUUID)
 	if err != nil {

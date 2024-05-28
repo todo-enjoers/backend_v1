@@ -7,7 +7,7 @@ import (
 var (
 	// Unauthenticated error
 	Unauthenticated = errors.New("unauthenticated")
-	
+
 	// InvalidPassword error
 	InvalidPassword = errors.New("invalid password")
 

@@ -53,7 +53,7 @@ func (store *todoStorage) GetByID(ctx context.Context, id uuid.UUID) (*model.Tod
 	var todo model.TodoDTO
 	err := store.pool.QueryRow(ctx, queryTodoGetByID, id).Scan(&todo.ID, &todo.Name, &todo.Description, &todo.IsCompleted, &todo.CreatedBy, &todo.ProjectID, &todo.Column)
 	if err != nil {
-		return nil, err
+		return nil, storage.ErrGetByID
 	}
 	return &todo, nil
 }

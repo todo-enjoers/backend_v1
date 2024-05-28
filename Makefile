@@ -13,7 +13,7 @@ help:
 	@echo "You should run <all> to fully build and run the project"
 	@echo "To start a db connection use:"
 	@echo "	1. service docker run"
-	@echo "	2. docker compose -f ./infra/postgres.yaml up -d"
+	@echo "	2. sudo docker compose -f infra/postgres.yaml up -d"
 
 .PHONY: all
 all: build run-prepare run

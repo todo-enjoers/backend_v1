@@ -1,0 +1,396 @@
+@startuml
+namespace config {
+    class Config << (S,Aquamarine) >> {
+        + JWT *JWT
+        + Controller *Controller
+        + Postgres *PostgresConfig
+
+    }
+    class Controller << (S,Aquamarine) >> {
+        + Host string
+        + Port int
+
+        + GetBindAddress() string
+
+    }
+    class JWT << (S,Aquamarine) >> {
+        + AccessTokenLifeTime int
+        + RefreshTokenLifeTime int
+        + PublicKeyPath string
+        + PrivateKeyPath string
+
+    }
+    class PostgresConfig << (S,Aquamarine) >> {
+        + Host string
+        + Port int
+        + User string
+        + Password string
+        + Database string
+
+        + GetURI() string
+
+    }
+}
+
+
+namespace controller {
+    interface Controller  {
+        + Run(ctx context.Context) error
+        + Shutdown(ctx context.Context) error
+
+    }
+}
+
+
+namespace http {
+    class Controller << (S,Aquamarine) >> {
+        - server *echo.Echo
+        - log *zap.Logger
+        - cfg *config.Config
+        - token token.ProviderI
+        - store storage.Interface
+
+        - generateAccessAndRefreshTokenForUser(userID uuid.UUID) (string, string, error)
+        - getUserDataFromRequest(req *http.Request) (*model.UserDataInToken, error)
+        - getUserIDFromRequest(req *http.Request) (uuid.UUID, error)
+        - configure() error
+        - configureRoutes() 
+        - configureMiddlewares() 
+        - logValuesFunc(_ echo.Context, v middleware.RequestLoggerValues) error
+
+        + HandleCreateColumn(c echo.Context) error
+        + HandleDeleteColumn(c echo.Context) error
+        + HandleGetColumnByName(c echo.Context) error
+        + HandleUpdateColumn(c echo.Context) error
+        + HandleGetAllColumn(c echo.Context) error
+        + PasswordToHash(raw string) ([]byte, error)
+        + CompareHashes(passReq []byte, passDB []byte) error
+        + Run(ctx context.Context) error
+        + Shutdown(ctx context.Context) error
+        + HandleCreateProject(c echo.Context) error
+        + HandleDeleteProject(c echo.Context) error
+        + HandleUpdateProject(c echo.Context) error
+        + HandleGetMyProject(c echo.Context) error
+        + HandleGetMyProjectById(c echo.Context) error
+        + HandleCreateTodo(c echo.Context) error
+        + HandleGetTodosById(c echo.Context) error
+        + HandleChangeTodo(c echo.Context) error
+        + HandleDeleteTodo(c echo.Context) error
+        + HandleGetAllTodos(c echo.Context) error
+        + HandleRegister(c echo.Context) error
+        + HandleLogin(c echo.Context) error
+        + HandleChangePassword(c echo.Context) error
+        + HandleGetMe(c echo.Context) error
+        + HandleGetAll(c echo.Context) error
+        + HandleRefreshToken(c echo.Context) error
+
+    }
+}
+
+"controller.Controller" <|-- "http.Controller"
+
+namespace jwt {
+    class CustomClaims << (S,Aquamarine) >> {
+        + IsAccess bool
+
+    }
+    class Provider << (S,Aquamarine) >> {
+        - publicKey *rsa.PublicKey
+        - privateKey *rsa.PrivateKey
+        - accessLifetime int
+        - refreshLifetime int
+
+        - readKeyFunc(token *jwt.Token) (<font color=blue>interface</font>{}, error)
+
+        + GetDataFromToken(token string) (*model.UserDataInToken, error)
+        + CreateTokenForUser(userID uuid.UUID, isAccess bool) (string, error)
+
+    }
+}
+"jwt.StandardClaims" *-- "jwt.CustomClaims"
+
+"token.ProviderI" <|-- "jwt.Provider"
+
+namespace model {
+    class ColumDTO << (S,Aquamarine) >> {
+        + ProjectId uuid.UUID
+        + Name string
+        + Order int
+
+    }
+    class ColumRequest << (S,Aquamarine) >> {
+        + ProjectId uuid.UUID
+        + Name string
+        + Order int
+
+    }
+    class ColumResponse << (S,Aquamarine) >> {
+        + ProjectId uuid.UUID
+        + Name string
+        + Order int
+
+    }
+    class ErrorResponse << (S,Aquamarine) >> {
+        + Error string
+
+    }
+    class GroupDTO << (S,Aquamarine) >> {
+        + UserID uuid.UUID
+        + ProjectID uuid.UUID
+
+    }
+    class GroupResponse << (S,Aquamarine) >> {
+        + UserID uuid.UUID
+        + ProjectID uuid.UUID
+
+    }
+    class ProjectDTO << (S,Aquamarine) >> {
+        + ID uuid.UUID
+        + Name string
+        + CreatedBy uuid.UUID
+
+    }
+    class ProjectRequest << (S,Aquamarine) >> {
+        + ID uuid.UUID
+        + Name string
+        + CreatedBy uuid.UUID
+
+    }
+    class ProjectResponse << (S,Aquamarine) >> {
+        + ID uuid.UUID
+        + Name string
+        + CreatedBy uuid.UUID
+
+    }
+    class TodoCreateRequest << (S,Aquamarine) >> {
+        + ID uuid.UUID
+        + Name string
+        + Description string
+        + IsCompleted bool
+        + CreatedBy uuid.UUID
+        + ProjectID uuid.UUID
+        + Column string
+
+    }
+    class TodoCreateResponse << (S,Aquamarine) >> {
+        + ID uuid.UUID
+        + Name string
+        + Description string
+        + IsCompleted bool
+        + ProjectID uuid.UUID
+        + CreatedBy uuid.UUID
+        + Column string
+
+    }
+    class TodoDTO << (S,Aquamarine) >> {
+        + ID uuid.UUID
+        + Name string
+        + Description string
+        + IsCompleted bool
+        + ProjectID uuid.UUID
+        + CreatedBy uuid.UUID
+        + Column string
+
+    }
+    class TodoUpdateRequest << (S,Aquamarine) >> {
+        + Name string
+        + Description string
+        + IsCompleted bool
+
+    }
+    class UserChangePasswordRequest << (S,Aquamarine) >> {
+        + OldPassword string
+        + NewPassword string
+        + NewPasswordAgain string
+
+    }
+    class UserCoupleTokensRequest << (S,Aquamarine) >> {
+        + ID uuid.UUID
+        + AccessToken string
+        + RefreshToken string
+
+    }
+    class UserCoupleTokensResponse << (S,Aquamarine) >> {
+        + ID uuid.UUID
+        + AccessToken string
+        + RefreshToken string
+
+    }
+    class UserDTO << (S,Aquamarine) >> {
+        + ID uuid.UUID
+        + Login string
+        + Password string
+
+    }
+    class UserDataInToken << (S,Aquamarine) >> {
+        + ID uuid.UUID
+        + IsAccess bool
+
+    }
+    class UserGetMeResponse << (S,Aquamarine) >> {
+        + ID uuid.UUID
+        + Name string
+
+    }
+    class UserLoginRequest << (S,Aquamarine) >> {
+        + Login string
+        + Password string
+
+    }
+    class UserLoginResponse << (S,Aquamarine) >> {
+        + ID uuid.UUID
+        + AccessToken string
+        + RefreshToken string
+
+    }
+    class UserRegisterRequest << (S,Aquamarine) >> {
+        + Login string
+        + Password string
+
+        + Validate() (bool, error)
+
+    }
+    class UserRegisterResponse << (S,Aquamarine) >> {
+        + ID uuid.UUID
+        + AccessToken string
+        + RefreshToken string
+
+    }
+}
+
+
+namespace pgx {
+    class Storage << (S,Aquamarine) >> {
+        - pool *pgxpool.Pool
+        - log *zap.Logger
+        - user *userStorage
+        - project *projectsStorage
+        - todo *todoStorage
+        - column *columnStorage
+        - pgErr *pgconn.PgError
+
+        + User() storage.UserStorage
+        + Todo() storage.TodoStorage
+        + Project() storage.ProjectStorage
+        + Column() storage.ColumnStorage
+
+    }
+    class columnStorage << (S,Aquamarine) >> {
+        - pool *pgxpool.Pool
+        - log *zap.Logger
+        - pgErr *pgconn.PgError
+
+        - migrate() error
+
+        + CreateColumn(ctx context.Context, column *model.ColumDTO) error
+        + DeleteColumn(ctx context.Context, name string, projectId uuid.UUID) error
+        + GetColumnByName(ctx context.Context, name string, projectId uuid.UUID) (*model.ColumDTO, error)
+        + UpdateColumn(ctx context.Context, column *model.ColumDTO, name string, projectId uuid.UUID) error
+        + GetAllColumns(ctx context.Context, projectId uuid.UUID) ([]model.ColumDTO, error)
+
+    }
+    class projectsStorage << (S,Aquamarine) >> {
+        - pool *pgxpool.Pool
+        - log *zap.Logger
+        - pgErr *pgconn.PgError
+
+        - migrate() error
+
+        + Create(ctx context.Context, project *model.ProjectDTO) error
+        + GetMyByName(ctx context.Context, name string, createdBy uuid.UUID) error
+        + GetByID(ctx context.Context, id uuid.UUID) (*model.ProjectDTO, error)
+        + GetMyProjects(ctx context.Context, createdByID uuid.UUID) ([]model.ProjectDTO, error)
+        + UpdateName(ctx context.Context, name string, id uuid.UUID) error
+        + Delete(ctx context.Context, id uuid.UUID) error
+
+    }
+    class todoStorage << (S,Aquamarine) >> {
+        - pool *pgxpool.Pool
+        - log *zap.Logger
+        - pgErr *pgconn.PgError
+
+        - migrateT() error
+
+        + Create(ctx context.Context, todo *model.TodoDTO) error
+        + GetByID(ctx context.Context, id uuid.UUID) (*model.TodoDTO, error)
+        + GetAll(ctx context.Context, createdBy uuid.UUID) ([]model.TodoDTO, error)
+        + Update(ctx context.Context, todo *model.TodoDTO, id uuid.UUID) error
+        + Delete(ctx context.Context, id uuid.UUID) error
+
+    }
+    class userStorage << (S,Aquamarine) >> {
+        - pool *pgxpool.Pool
+        - log *zap.Logger
+        - pgErr *pgconn.PgError
+
+        - migrate() error
+
+        + Create(ctx context.Context, user *model.UserDTO) error
+        + GetByID(ctx context.Context, id uuid.UUID) (*model.UserDTO, error)
+        + GetByLogin(ctx context.Context, login string) (*model.UserDTO, error)
+        + ChangePassword(ctx context.Context, password string, id uuid.UUID) error
+        + GetAll(ctx context.Context) ([]model.UserDTO, error)
+
+    }
+}
+
+"storage.Interface" <|-- "pgx.Storage"
+"storage.ColumnStorage" <|-- "pgx.columnStorage"
+"storage.ProjectStorage" <|-- "pgx.projectsStorage"
+"storage.TodoStorage" <|-- "pgx.todoStorage"
+"storage.UserStorage" <|-- "pgx.userStorage"
+
+namespace storage {
+    interface ColumnStorage  {
+        + CreateColumn(ctx context.Context, column *model.ColumDTO) error
+        + DeleteColumn(ctx context.Context, name string, projectId uuid.UUID) error
+        + GetColumnByName(ctx context.Context, name string, projectId uuid.UUID) (*model.ColumDTO, error)
+        + UpdateColumn(ctx context.Context, column *model.ColumDTO, name string, projectId uuid.UUID) error
+        + GetAllColumns(ctx context.Context, projectId uuid.UUID) ([]model.ColumDTO, error)
+
+    }
+    interface Interface  {
+        + User() UserStorage
+        + Todo() TodoStorage
+        + Project() ProjectStorage
+        + Column() ColumnStorage
+
+    }
+    interface ProjectStorage  {
+        + GetMyByName(ctx context.Context, name string, createdBy uuid.UUID) error
+        + GetByID(ctx context.Context, id uuid.UUID) (*model.ProjectDTO, error)
+        + GetMyProjects(ctx context.Context, createdByID uuid.UUID) ([]model.ProjectDTO, error)
+        + UpdateName(ctx context.Context, name string, id uuid.UUID) error
+        + Delete(ctx context.Context, id uuid.UUID) error
+        + Create(ctx context.Context, project *model.ProjectDTO) error
+
+    }
+    interface TodoStorage  {
+        + Create(ctx context.Context, todo *model.TodoDTO) error
+        + GetByID(ctx context.Context, id uuid.UUID) (*model.TodoDTO, error)
+        + GetAll(ctx context.Context, createdBy uuid.UUID) ([]model.TodoDTO, error)
+        + Update(ctx context.Context, todo *model.TodoDTO, id uuid.UUID) error
+        + Delete(ctx context.Context, id uuid.UUID) error
+
+    }
+    interface UserStorage  {
+        + Create(ctx context.Context, user *model.UserDTO) error
+        + GetByID(ctx context.Context, id uuid.UUID) (*model.UserDTO, error)
+        + GetByLogin(ctx context.Context, login string) (*model.UserDTO, error)
+        + ChangePassword(ctx context.Context, password string, id uuid.UUID) error
+        + GetAll(ctx context.Context) ([]model.UserDTO, error)
+
+    }
+}
+
+
+namespace token {
+    interface ProviderI  {
+        + GetDataFromToken(token string) (*model.UserDataInToken, error)
+        + CreateTokenForUser(userID uuid.UUID, isAccess bool) (string, error)
+
+    }
+}
+
+
+@enduml

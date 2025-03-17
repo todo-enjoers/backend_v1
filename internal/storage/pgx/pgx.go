@@ -3,8 +3,9 @@ package pgx
 import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/todo-enjoers/backend_v1/internal/storage"
 	"go.uber.org/zap"
+
+	"github.com/todo-enjoers/backend_v1/internal/storage"
 )
 
 // Checking whether the interface "Controller" implements the structure "Controller"

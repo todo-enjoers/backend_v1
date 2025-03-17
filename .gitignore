@@ -12,4 +12,7 @@
 go.work
 .idea/
 certs/
-migrations/
+
+*.toml
+
+infra/

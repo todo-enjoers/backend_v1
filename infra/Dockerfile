@@ -1,7 +1,6 @@
 # syntax=docker/dockerfile:1
+ARG GO_VERSION=1.24.0
 
-
-ARG GO_VERSION=1.22.2
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION} AS build
 WORKDIR /src
 
@@ -10,12 +9,11 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=bind,source=go.mod,target=go.mod \
     go mod download -x
 
-
 ARG TARGETARCH
 
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=bind,target=. \
-    CGO_ENABLED=0 GOARCH=$TARGETARCH go build -o /bin/server ./cmd
+    CGO_ENABLED=0 GOARCH=$TARGETARCH go build -o /bin/server ./cmd/server/server.go
 
 FROM alpine:latest AS final
 

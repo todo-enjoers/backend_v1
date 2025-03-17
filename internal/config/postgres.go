@@ -3,14 +3,14 @@ package config
 import "fmt"
 
 type PostgresConfig struct {
-	Host     string `config:"postgres-host"`
-	Port     int    `config:"postgres-port"`
-	User     string `config:"postgres-user"`
-	Password string `config:"postgres-password"`
-	Database string `config:"postgres-database"`
+	Host     string `config:"host" toml:"host"`
+	Port     int    `config:"port" toml:"port"`
+	User     string `config:"user" toml:"user"`
+	Password string `config:"password" toml:"password"`
+	Database string `config:"database" toml:"database"`
 }
 
-func (cfg *PostgresConfig) DataBaseDNS() string {
+func (cfg *PostgresConfig) GetURI() string {
 	return fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s?sslmode=disable",
 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Database,

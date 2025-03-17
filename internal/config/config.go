@@ -2,29 +2,41 @@ package config
 
 import (
 	"context"
-	"github.com/heetch/confita"
-	"github.com/heetch/confita/backend/env"
-	"github.com/heetch/confita/backend/flags"
 	"os"
 	"path"
+
+	"github.com/heetch/confita"
+	"github.com/heetch/confita/backend/env"
+	"github.com/heetch/confita/backend/file"
+	"go.uber.org/zap"
 )
 
-type Config struct {
-	JWT        *JWT
-	Controller *Controller
-	Postgres   *PostgresConfig
+var configPath string
+
+func init() {
+	configPath = os.Getenv("CONFIG_PATH")
 }
 
-func New(ctx context.Context) (*Config, error) {
+type Config struct {
+	JWT        *JWT            `config:"JWT" toml:"JWT"`
+	Controller *Controller     `config:"Controller" toml:"Controller"`
+	Postgres   *PostgresConfig `config:"Postgres" toml:"Postgres"`
+}
+
+func New(log *zap.Logger) (*Config, error) {
+	ctx := context.Background()
+
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, err
 	}
 
+	log.Info("loading config", zap.String("path", configPath))
+
 	cfg := &Config{
 		Controller: &Controller{
-			BindAddress: "localhost",
-			BindPort:    8080,
+			Host: "localhost",
+			Port: 8080,
 		},
 		Postgres: &PostgresConfig{
 			Host:     "localhost",
@@ -40,9 +52,14 @@ func New(ctx context.Context) (*Config, error) {
 			PrivateKeyPath:       path.Join(wd, "certs", "private.pem"),
 		},
 	}
-	loader := confita.NewLoader(env.NewBackend(), flags.NewBackend())
+
+	loader := confita.NewLoader(
+		env.NewBackend(),
+		file.NewBackend(configPath),
+	)
 	if err = loader.Load(ctx, cfg); err != nil {
 		return nil, err
 	}
+
 	return cfg, nil
 }

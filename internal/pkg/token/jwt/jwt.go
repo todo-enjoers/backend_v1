@@ -3,18 +3,20 @@ package jwt
 import (
 	"crypto/rsa"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
+
 	"github.com/todo-enjoers/backend_v1/internal/config"
 	"github.com/todo-enjoers/backend_v1/internal/model"
 	"github.com/todo-enjoers/backend_v1/internal/pkg/token"
-	"go.uber.org/zap"
-	"os"
-	"time"
 )
 
-// Checking whether the interface "ProviderI" implements the structure "Provider"
-var _ token.ProviderI = (*Provider)(nil)
+// Checking whether the interface "Provider" implements the structure "Provider"
+var _ token.Provider = (*Provider)(nil)
 
 type Provider struct {
 	publicKey       *rsa.PublicKey
@@ -32,7 +34,7 @@ func NewProvider(cfg *config.Config, log *zap.Logger) (*Provider, error) {
 	//Read and Parsing Private Key
 	privateKeyRaw, err := os.ReadFile(cfg.JWT.PrivateKeyPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read private key file")
+		return nil, fmt.Errorf("failed to read private key file: %w", err)
 	}
 	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privateKeyRaw)
 	if err != nil {

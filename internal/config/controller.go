@@ -3,10 +3,10 @@ package config
 import "fmt"
 
 type Controller struct {
-	BindAddress string `config:"bind_address,short=a"`
-	BindPort    int    `config:"bind_port,short=p"`
+	Host string `config:"host" toml:"host"`
+	Port int    `config:"port" toml:"port"`
 }
 
 func (c Controller) GetBindAddress() string {
-	return fmt.Sprintf("%s:%d", c.BindAddress, c.BindPort)
+	return fmt.Sprintf("%s:%d", c.Host, c.Port)
 }

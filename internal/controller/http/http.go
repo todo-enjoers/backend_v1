@@ -2,16 +2,18 @@ package http
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	"go.uber.org/zap"
+
 	"github.com/todo-enjoers/backend_v1/internal/config"
 	"github.com/todo-enjoers/backend_v1/internal/controller"
 	"github.com/todo-enjoers/backend_v1/internal/pkg/token"
 	"github.com/todo-enjoers/backend_v1/internal/storage"
-	"go.uber.org/zap"
-	"net/http"
 )
 
 // Checking whether the interface "Controller" implements the structure "Controller"
@@ -21,7 +23,7 @@ type Controller struct {
 	server *echo.Echo
 	log    *zap.Logger
 	cfg    *config.Config
-	token  token.ProviderI
+	token  token.Provider
 	store  storage.Interface
 }
 
@@ -29,7 +31,7 @@ func New(
 	store storage.Interface,
 	log *zap.Logger,
 	cfg *config.Config,
-	tokenProvider token.ProviderI,
+	tokenProvider token.Provider,
 ) (*Controller, error) {
 	log.Info("initialize controller")
 	ctrl := &Controller{
